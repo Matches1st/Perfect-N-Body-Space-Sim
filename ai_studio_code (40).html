@@ -1,0 +1,1508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>2D N-Body Simulation with Enhanced Features</title>
+<style>
+    body { margin: 0; background: #000; overflow: hidden; font-family: Arial, Helvetica, sans-serif; }
+    canvas { display: block; background: #000; }
+    #ui {
+        position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.7); color: #fff;
+        padding: 10px; border-radius: 5px; font-size: 14px; line-height: 1.4; z-index: 10;
+    }
+    #ui label { display: block; margin-bottom: 4px; }
+    #ui input[type=range] { width: 150px; margin-bottom: 8px; }
+    #ui button { margin-right: 8px; margin-bottom: 8px; }
+    #object-list-container {
+        position: absolute; top: 10px; right: 10px; width: 250px; height: calc(100vh - 20px);
+        background: rgba(50, 50, 50, 0.7);
+        color: #fff;
+        border-radius: 5px;
+        padding: 10px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+    }
+    #object-list-container h3 { margin: 0 0 10px 0; text-align: center; }
+    #object-list {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    .object-item {
+        display: flex;
+        align-items: center;
+        padding: 5px;
+        border-bottom: 1px solid #333;
+        cursor: pointer;
+        transition: background-color: 0.2s;
+    }
+    .object-item:hover { background-color: rgba(255,255,255,0.1); }
+    .object-item.tracked {
+        background-color: rgba(0, 100, 255, 0.3);
+        border-left: 3px solid #007bff;
+    }
+    .object-item .color-swatch { width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; border: 1px solid #555; flex-shrink: 0;}
+    .object-item .info { flex-grow: 1; }
+    .object-item .info div { line-height: 1.3; }
+    .delete-btn, .edit-btn, .toggle-vis-btn {
+        background: #c00; color: #fff; border: 1px solid #f33; border-radius: 50%;
+        width: 20px; height: 20px; line-height: 18px; text-align: center;
+        cursor: pointer; margin-left: 5px; flex-shrink: 0; padding: 0;
+    }
+    .delete-btn:hover { background: #f00; }
+    .edit-btn {
+        background: #005a9c;
+        border-color: #33aaff;
+        font-weight: bold;
+    }
+    .edit-btn:hover { background: #007bff; }
+
+    .toggle-vis-btn {
+        background: #553c7b;
+        border-color: #a07cde;
+        font-weight: normal;
+        font-size: 14px;
+        line-height: 17px;
+    }
+    .toggle-vis-btn:hover { background: #6f42c1; }
+    .toggle-vis-btn.hidden-vis {
+        background: #444;
+        border-color: #777;
+        opacity: 0.6;
+    }
+
+
+    #utilities-container {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        display: flex;
+        align-items: flex-end;
+    }
+    #utilitiesButton { padding: 10px; }
+    #utilitiesToolbar {
+        display: flex;
+        background: rgba(0,0,0,.7);
+        border-radius: 5px;
+        padding: 5px;
+        margin-left: 10px;
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-width 0.4s ease-in-out, opacity 0.3s ease, padding 0.4s ease-in-out;
+        white-space: nowrap;
+    }
+    #utilitiesToolbar.expanded {
+        max-width: 800px;
+        opacity: 1;
+        overflow-x: auto;
+    }
+    #utilitiesToolbar button {
+        padding: 8px;
+        flex-shrink: 0;
+    }
+    .tool-btn.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    #edit-panel {
+        position: absolute;
+        background: rgba(20,20,40,.9);
+        color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #555;
+        z-index: 20;
+        display: none; /* Initially hidden */
+        width: 220px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+    #edit-panel h4 {
+        margin-top: 0;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #444;
+        cursor: move;
+        user-select: none;
+    }
+    #edit-panel label { display: block; margin-top: 10px; }
+    #edit-panel input { width: 100%; box-sizing: border-box; margin-top: 5px; }
+    #edit-panel button { margin-top: 15px; }
+
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+    <label>Gravity Strength: <span id="gravityValue">200</span></label>
+    <input type="range" id="gravitySlider" min="0.1" max="670" step="0.1" value="200">
+
+    <label>Gravity Multiplier: <span id="gravityMultValue">10</span>×</label>
+    <input type="range" id="gravityMultSlider" min="0.1" max="100" step="0.1" value="10">
+
+    <label>Time Speed: <span id="timeValue">1.0</span>×</label>
+    <input type="range" id="timeSlider" min="0.1" max="100" step="0.1" value="1.0">
+
+    <label>Spawn Mass: <span id="spawnMassValue">10</span></label>
+    <input type="range" id="spawnMassSlider" min="1" max="1000" step="1" value="10">
+
+    <label>Throw Speed Multiplier: <span id="throwSpeedMultValue">10.0</span>×</label>
+    <input type="range" id="throwSpeedMultSlider" min="0.1" max="100" step="0.1" value="10">
+
+    <label>Path Length: <span id="pathLengthValue">550</span>×</label>
+    <input type="range" id="pathLengthSlider" min="1" max="5000" step="1" value="550">
+
+    <div>
+        <button id="clearAllButton">Clear All</button>
+        <button id="resetAllButton">Reset All Sliders</button>
+        <button id="pauseButton">Pause</button>
+    </div>
+</div>
+
+<div id="object-list-container">
+    <h3>Object List</h3>
+    <div id="object-list"></div>
+</div>
+
+<div id="utilities-container">
+    <button id="utilitiesButton">Utilities</button>
+    <div id="utilitiesToolbar">
+        <button id="trackerBtn" class="tool-btn">Planet Tracker</button>
+        <button id="selectBtn" class="tool-btn">Planet Select</button>
+        <button id="addVelBtn" class="tool-btn">Add Velocity</button>
+        <button id="anchorBtn" class="tool-btn">Anchor</button>
+        <button id="trailsBtn" class="tool-btn">Planet Trails</button>
+        <button id="relTrailBtn" class="tool-btn">Rel. Trail</button>
+        <button id="orbitBtn" class="tool-btn">Displayed Orbit</button>
+        <button id="editorBtn" class="tool-btn">Planet Editor</button>
+        <button id="barycenterBtn" class="tool-btn">Barycenter</button>
+    </div>
+</div>
+
+<div id="edit-panel">
+    <h4 id="edit-panel-header">Edit Planet</h4>
+    <input type="hidden" id="edit-id">
+    <label for="edit-name">Name</label>
+    <input type="text" id="edit-name">
+    <label for="edit-mass">Mass</label>
+    <input type="number" id="edit-mass" min="1">
+    <label for="edit-color">Color</label>
+    <input type="color" id="edit-color">
+    <button id="saveEditBtn">Save</button>
+    <button id="cancelEditBtn">Cancel</button>
+</div>
+
+<script>
+/* ---------- defaults ---------- */
+const DEFAULT_G = 200, DEFAULT_GM = 10, DEFAULT_TS = 1.0, DEFAULT_SM = 10, DEFAULT_TSM = 10, DEFAULT_ZOOM = 1, DEFAULT_PATH_MULT = 550;
+
+/* ---------- canvas ---------- */
+const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+
+/* ---------- view transform ---------- */
+let zoom = DEFAULT_ZOOM, viewX = 0, viewY = 0;
+function worldToScreen(wx, wy){ return { x:(wx - viewX)*zoom + canvas.width/2, y:(wy - viewY)*zoom + canvas.height/2 }; }
+function screenToWorld(sx, sy){ return { x:(sx - canvas.width/2)/zoom + viewX, y:(sy - canvas.height/2)/zoom + viewY }; }
+function applyView(){ ctx.setTransform(zoom, 0, 0, zoom, -viewX*zoom + canvas.width/2, -viewY*zoom + canvas.height/2); }
+
+/* ---------- physics constants ---------- */
+const BASE_DT = 0.01, SUBST = 8, SOFT = 0.03, REST = 0.3, BOUNCE = 0.9;
+const GSIZE = 40, COL_IT = 3, THETA = 0.5;
+const PREDICTION_THETA = 1.2;
+const REF_DIAMETER = 2 * Math.sqrt(10);
+
+/* ---------- particle ---------- */
+let nextId = 1;
+class P{
+    constructor(x,y,m=1,vx=0,vy=0){
+        this.id = nextId++; this.name = null;
+        this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.m=m; this.r=Math.sqrt(this.m);
+        this.ax=0; this.ay=0; this.merged=false;
+        this.customColor = null; this.frozen = false;
+        this.anchored = false;
+        this.trail = [];
+        this.snapshot = null;
+        // Barycenter properties
+        this.isBarycenter = false;
+        this.connectedIds = [];
+        this.visible = true;
+    }
+    color(){
+        if(this.customColor) return this.customColor;
+        const hue = (Math.log10(this.m) * 180) % 360;
+        return `hsl(${hue}, 90%, 65%)`;
+    }
+}
+let ps = [];
+function resetPs(){ ps=[]; nextId = 1; resetHistory(); }
+function cloneParticle(p) {
+    const clone = Object.assign(new P(0,0), JSON.parse(JSON.stringify(p)));
+    return clone;
+}
+
+/* ---------- state variables ---------- */
+let trackedParticle = null;
+let planetTrackerMode = false, planetSelectMode = false, planetEditorMode = false, addVelocityMode = false, anchorMode = false, barycenterMode = false;
+let trailsEnabled = false, orbitPredictionEnabled = false, relativeTrailsEnabled = false;
+let selectedParticles = new Set();
+let selectionBox = {world: null, screen: null};
+let selectionState = 'idle'; // idle, drawing, locked, draggingLocked
+let addVelToolState = 'idle'; // 'idle', 'drawing', 'locked', 'applyingVelocity'
+let lockedBoxDragStart = {};
+let currentlyEditing = null;
+let predictedPaths = new Map();
+let spawnPreviewPath = [];
+let isPaused = false;
+let PATH_LENGTH_MULTIPLIER = DEFAULT_PATH_MULT;
+let frameCounter = 0;
+
+/* ---------- Undo/Redo System ---------- */
+const MAX_HISTORY = 50;
+let historyStack = [];
+let redoStack = [];
+
+function recordHistory(action) {
+    redoStack = [];
+    historyStack.push(action);
+    if (historyStack.length > MAX_HISTORY) {
+        historyStack.shift();
+    }
+}
+
+function undo() {
+    if (historyStack.length === 0) return;
+    const action = historyStack.pop();
+    redoStack.push(action);
+
+    switch(action.type) {
+        case 'spawn': ps = ps.filter(p => p.id !== action.particle.id); break;
+        case 'delete': ps.push(action.particle); break;
+        case 'edit': case 'addVelocity': case 'anchor':
+            let p_undo = ps.find(p => p.id === action.before.id);
+            if (p_undo) Object.assign(p_undo, action.before);
+            break;
+        case 'batchEdit':
+            action.before.forEach(state => {
+                const p = ps.find(p => p.id === state.id);
+                if (p) Object.assign(p, state);
+            });
+            break;
+    }
+}
+
+function redo() {
+    if (redoStack.length === 0) return;
+    const action = redoStack.pop();
+    historyStack.push(action);
+
+    switch(action.type) {
+        case 'spawn': ps.push(action.particle); break;
+        case 'delete': ps = ps.filter(p => p.id !== action.particle.id); break;
+        case 'edit': case 'addVelocity': case 'anchor':
+            let p_redo = ps.find(p => p.id === action.after.id);
+            if (p_redo) Object.assign(p_redo, action.after);
+            break;
+        case 'batchEdit':
+            action.after.forEach(state => {
+                const p = ps.find(p => p.id === state.id);
+                if (p) Object.assign(p, state);
+            });
+            break;
+    }
+}
+
+function resetHistory() {
+    historyStack = [];
+    redoStack = [];
+}
+
+/* ---------- spatial grid / collisions ---------- */
+function key(x,y){ return `${Math.floor(x/GSIZE)},${Math.floor(y/GSIZE)}`; }
+function buildGrid(particleList){
+    const g=new Map();
+    for(const p of particleList){ const k=key(p.x,p.y); if(!g.has(k)) g.set(k,[]); g.get(k).push(p); }
+    return g;
+}
+function nearby(p,g){
+    const out=[];
+    const x_base = Math.floor(p.x/GSIZE), y_base = Math.floor(p.y/GSIZE);
+    const searchDist = Math.ceil(p.r / GSIZE);
+
+    for(let dy = -searchDist; dy <= searchDist; dy++) {
+        for(let dx = -searchDist; dx <= searchDist; dx++) {
+            const kk = `${x_base + dx},${y_base + dy}`;
+            if(g.has(kk)) {
+                out.push(...g.get(kk));
+            }
+        }
+    }
+    return out;
+}
+function handleMerges(particleList) {
+    for (let it = 0; it < COL_IT; it++) {
+        const g = buildGrid(particleList.filter(p => !p.isBarycenter));
+        for (let i = 0; i < particleList.length; i++) {
+            const p1 = particleList[i];
+            if (p1.merged || p1.isBarycenter) continue;
+            const nears = nearby(p1, g).filter(p2 => particleList.indexOf(p2) > i && !p2.merged);
+            
+            for (const p2 of nears) {
+                const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                const d_sq = dx * dx + dy * dy;
+
+                if (d_sq < 1e-9) {
+                    let absorber = p1, absorbee = p2;
+                    if (p1.m < p2.m) { [absorber, absorbee] = [p2, p1]; }
+                    if (p1.anchored && !p2.anchored) { [absorber, absorbee] = [p1, p2]; }
+                    if (p2.anchored && !p1.anchored) { [absorber, absorbee] = [p2, p1]; }
+                    
+                    const newM = absorber.m + absorbee.m;
+                    if (!absorber.anchored) {
+                        absorber.vx = (absorber.vx * absorber.m + absorbee.vx * absorbee.m) / newM;
+                        absorber.vy = (absorber.vy * absorber.m + absorbee.vy * absorbee.m) / newM;
+                    }
+                    absorber.m = newM;
+                    absorber.r = Math.sqrt(absorber.m);
+                    absorbee.merged = true;
+
+                    if (absorbee === p1) { break; } 
+                    else { continue; }
+                }
+
+                const d = Math.sqrt(d_sq);
+                if (d <= p1.r + p2.r) {
+                    let absorber = p1, absorbee = p2;
+                    if (p1.m < p2.m && !p1.anchored) { [absorber, absorbee] = [p2, p1]; }
+                    if (p2.anchored) { [absorber, absorbee] = [p2, p1]; }
+
+                    const newM = absorber.m + absorbee.m;
+                    if (!absorber.anchored) {
+                        absorber.x = (absorber.x * absorber.m + absorbee.x * absorbee.m) / newM;
+                        absorber.y = (absorber.y * absorber.m + absorbee.y * absorbee.m) / newM;
+                        absorber.vx = (absorber.vx * absorber.m + absorbee.vx * absorbee.m) / newM;
+                        absorber.vy = (absorber.vy * absorber.m + absorbee.vy * absorbee.m) / newM;
+                    }
+                    absorber.m = newM;
+                    absorber.r = Math.sqrt(absorber.m);
+                    absorbee.merged = true;
+
+                    if (absorbee === p1) break;
+                }
+            }
+        }
+    }
+    return particleList.filter(p => !p.merged);
+}
+
+
+/* ---------- quadtree for barnes-hut ---------- */
+class Quad{
+    constructor(bounds){ this.bounds=bounds; this.mass=0; this.comX=0; this.comY=0; this.p=null; this.children=null; }
+    insert(p){
+        if(!p || this.p === p) return;
+        const newMass = this.mass + p.m;
+        this.comX = (this.comX * this.mass + p.x * p.m) / newMass;
+        this.comY = (this.comY * this.mass + p.y * p.m) / newMass;
+        this.mass = newMass;
+
+        if(this.children){
+            this.children[this.getIdx(p.x,p.y)].insert(p);
+        }else if(this.p){
+            const w2=this.bounds.w/2, h2=this.bounds.h/2;
+            this.children=[
+                new Quad({x:this.bounds.x,y:this.bounds.y,w:w2,h:h2}),
+                new Quad({x:this.bounds.x+w2,y:this.bounds.y,w:w2,h:h2}),
+                new Quad({x:this.bounds.x,y:this.bounds.y+h2,w:w2,h:h2}),
+                new Quad({x:this.bounds.x+w2,y:this.bounds.y+h2,w:w2,h:h2})
+            ];
+            this.children[this.getIdx(this.p.x,this.p.y)].insert(this.p);
+            this.children[this.getIdx(p.x,p.y)].insert(p);
+            this.p=null;
+        }else{
+            this.p=p;
+        }
+    }
+    getIdx(x,y){
+        let idx=0;
+        if(x >= this.bounds.x + this.bounds.w/2) idx+=1;
+        if(y >= this.bounds.y + this.bounds.h/2) idx+=2;
+        return idx;
+    }
+}
+function calcForce(qt, p, theta, G, soft){
+    if(!qt || qt.mass===0) return {ax: 0, ay: 0};
+    const dx=qt.comX - p.x, dy=qt.comY - p.y;
+    const d2=dx*dx + dy*dy + soft*soft;
+    let ax = 0, ay = 0;
+
+    if(qt.children !== null){
+        const s=qt.bounds.w;
+        const d=Math.sqrt(d2);
+        if(s / d < theta){
+            const f=G * qt.mass / (d2 * d);
+            ax += f * dx;
+            ay += f * dy;
+        }else{
+            for(const child of qt.children) {
+                const force = calcForce(child, p, theta, G, soft);
+                ax += force.ax;
+                ay += force.ay;
+            }
+        }
+    }else if(qt.p && qt.p !== p){
+        const d=Math.sqrt(d2);
+        const f=G * qt.mass / (d2 * d);
+        ax += f * dx;
+        ay += f * dy;
+    }
+    return {ax, ay};
+}
+function buildQuadTree(particleList){
+    if(particleList.length===0) return null;
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    for(const p of particleList){
+        minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+        minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y);
+    }
+    let side=Math.max(maxX-minX, maxY-minY) || 100;
+    side *= 1.2;
+    const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+    const bounds={x:cx-side/2, y:cy-side/2, w:side, h:side};
+    const qt=new Quad(bounds);
+    for(const p of particleList.filter(p => !p.isBarycenter)) qt.insert(p);
+    return qt;
+}
+
+/* ---------- Dynamic Object Updates ---------- */
+function updateBarycenters() {
+    for (const p of ps) {
+        if (!p.isBarycenter) continue;
+
+        const connectedParticles = [];
+        p.connectedIds = p.connectedIds.filter(id => {
+            const connectedP = ps.find(part => part.id === id);
+            if (connectedP) {
+                connectedParticles.push(connectedP);
+                return true;
+            }
+            return false;
+        });
+
+        if (connectedParticles.length < 2) {
+            p.merged = true; // Mark for automatic deletion
+            continue;
+        }
+
+        let totalMass = 0;
+        let comX = 0;
+        let comY = 0;
+
+        for (const connectedP of connectedParticles) {
+            totalMass += connectedP.m;
+            comX += connectedP.m * connectedP.x;
+            comY += connectedP.m * connectedP.y;
+        }
+
+        if (totalMass > 0) {
+            p.m = totalMass;
+            p.x = comX / totalMass;
+            p.y = comY / totalMass;
+        } else {
+            p.merged = true;
+        }
+    }
+}
+
+
+/* ---------- step ---------- */
+let G = DEFAULT_G, GM=DEFAULT_GM, TS=DEFAULT_TS;
+function step(){
+    const dt=BASE_DT*TS/SUBST, EG=G*GM;
+    
+    if(!trailsEnabled && !relativeTrailsEnabled) {
+        for(const p of ps) p.trail = [];
+    }
+    
+    for(let s=0;s<SUBST;s++){
+        const qt=buildQuadTree(ps);
+        for(const p of ps){
+            if (p.anchored || p.frozen || p.isBarycenter) {
+                p.ax = 0; p.ay = 0;
+                if (!p.isBarycenter) { p.vx = 0; p.vy = 0; }
+                continue;
+            }
+            const {ax, ay} = qt ? calcForce(qt, p, THETA, EG, SOFT) : {ax:0, ay:0};
+            p.ax = ax; p.ay = ay;
+        }
+        for(const p of ps){
+            if (p.anchored || p.frozen || p.isBarycenter) continue;
+            p.vx += p.ax * dt;
+            p.vy += p.ay * dt;
+        }
+        
+        ps = handleMerges(ps);
+        updateBarycenters();
+
+        for(const p of ps){
+            if (p.anchored || p.frozen || p.isBarycenter) continue;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            if(isNaN(p.x)||isNaN(p.y)){ p.x=0; p.y=0; p.vx=p.vy=0; }
+            
+            if (trailsEnabled || (relativeTrailsEnabled && trackedParticle)) {
+                let newPoint;
+                if (trailsEnabled) { newPoint = {x: p.x, y: p.y}; } 
+                else {
+                    if (p === trackedParticle) { p.trail = []; continue; } 
+                    else { newPoint = { x: p.x - trackedParticle.x, y: p.y - trackedParticle.y }; }
+                }
+
+                const lastPoint = p.trail[p.trail.length - 1];
+                if (!lastPoint || (Math.sqrt(Math.pow(newPoint.x - lastPoint.x, 2) + Math.pow(newPoint.y - lastPoint.y, 2)) > 2)) {
+                    p.trail.push(newPoint);
+                }
+                
+                if (p.trail.length > 10000) p.trail.shift();
+                
+                const targetWorldLength = PATH_LENGTH_MULTIPLIER * REF_DIAMETER;
+                let currentTrailLength = 0;
+                let keepIndex = p.trail.length - 1;
+                for (let i = p.trail.length - 2; i >= 0; i--) {
+                    const seg_dx = p.trail[i+1].x - p.trail[i].x;
+                    const seg_dy = p.trail[i+1].y - p.trail[i].y;
+                    currentTrailLength += Math.sqrt(seg_dx*seg_dx + seg_dy*seg_dy);
+                    if (currentTrailLength > targetWorldLength) {
+                        keepIndex = i + 1;
+                        break;
+                    }
+                    keepIndex = i;
+                }
+                if (keepIndex > 0) p.trail.splice(0, keepIndex);
+            }
+        }
+    }
+}
+
+/* ---------- Orbit Prediction ---------- */
+const PRED_MAX_STEPS = 1500;
+
+function predictSpawnPath(initialGhost, existingParticles, relativeToParticle = null) {
+    if (!orbitPredictionEnabled) return [];
+
+    const PRED_STEP_INTERVAL = 5;
+    const EG = G * GM;
+    const dt_pred = BASE_DT / 2;
+    const duration = PATH_LENGTH_MULTIPLIER * REF_DIAMETER / 10;
+    const totalSteps = Math.min(PRED_MAX_STEPS, Math.floor(duration / dt_pred));
+
+    let ghosts = existingParticles.map(p => ({
+        id: p.id, x: p.x, y: p.y, vx: p.vx, vy: p.vy, m: p.m,
+        anchored: p.anchored, frozen: p.frozen, isBarycenter: p.isBarycenter
+    }));
+    
+    const newGhost = { ...initialGhost, id: -1, path: [] };
+    ghosts.push(newGhost);
+
+    let trackedGhost = null;
+    let trackedGhostPath = [];
+    if (relativeToParticle) {
+        trackedGhost = ghosts.find(g => g.id === relativeToParticle.id);
+    }
+
+    for (let step = 0; step < totalSteps; step++) {
+        const qt = buildQuadTree(ghosts);
+        for (const ghost of ghosts) {
+            if (ghost.anchored || ghost.frozen || ghost.isBarycenter) continue;
+            const { ax, ay } = qt ? calcForce(qt, ghost, THETA, EG, SOFT) : { ax: 0, ay: 0 };
+            ghost.vx += ax * dt_pred;
+            ghost.vy += ay * dt_pred;
+            ghost.x += ghost.vx * dt_pred;
+            ghost.y += ghost.vy * dt_pred;
+        }
+
+        if (step % PRED_STEP_INTERVAL === 0) {
+            newGhost.path.push({ x: newGhost.x, y: newGhost.y });
+            if (trackedGhost) {
+                trackedGhostPath.push({ x: trackedGhost.x, y: trackedGhost.y });
+            }
+        }
+    }
+
+    if (trackedGhost) {
+        if (trackedGhostPath.length === 0) return newGhost.path;
+        const trackedInitialPos = { x: relativeToParticle.x, y: relativeToParticle.y };
+        const relativePath = newGhost.path.map((point, i) => {
+            let trackedPoint = trackedGhost.anchored ? {x: trackedGhost.x, y: trackedGhost.y} : (trackedGhostPath[i] || trackedGhostPath[trackedGhostPath.length - 1]);
+            return {
+                x: trackedInitialPos.x + (point.x - trackedPoint.x),
+                y: trackedInitialPos.y + (point.y - trackedPoint.y)
+            };
+        });
+        return relativePath;
+    } else {
+        return newGhost.path;
+    }
+}
+
+
+function predictAllOrbits() {
+    predictedPaths.clear();
+    if (ps.length === 0 || !orbitPredictionEnabled) return;
+
+    const PRED_STEP_INTERVAL = 5;
+    const EG = G * GM;
+    const dt_pred = BASE_DT / 2;
+    const duration = PATH_LENGTH_MULTIPLIER * REF_DIAMETER / 10;
+    const totalSteps = Math.min(PRED_MAX_STEPS, Math.floor(duration / dt_pred));
+
+    let ghosts = ps.map(p => ({
+        id: p.id, x: p.x, y: p.y, vx: p.vx, vy: p.vy, m: p.m,
+        anchored: p.anchored, frozen: p.frozen, path: [], isBarycenter: p.isBarycenter
+    }));
+
+    let trackedGhost = trackedParticle ? ghosts.find(g => g.id === trackedParticle.id) : null;
+
+    for (let step = 0; step < totalSteps; step++) {
+        const qt = buildQuadTree(ghosts);
+        for (const ghost of ghosts) {
+            if (ghost.anchored || ghost.frozen || ghost.isBarycenter) continue;
+            const { ax, ay } = qt ? calcForce(qt, ghost, THETA, EG, SOFT) : { ax: 0, ay: 0 };
+            ghost.vx += ax * dt_pred;
+            ghost.vy += ay * dt_pred;
+            ghost.x += ghost.vx * dt_pred;
+            ghost.y += ghost.vy * dt_pred;
+        }
+
+        if (step % PRED_STEP_INTERVAL === 0) {
+            for (const ghost of ghosts) {
+                if (ghost.anchored || ghost.frozen || ghost.isBarycenter) continue;
+                ghost.path.push({ x: ghost.x, y: ghost.y });
+            }
+        }
+    }
+
+    if (trackedGhost) {
+        const trackedPath = trackedGhost.path;
+        if (trackedPath.length === 0 && !trackedGhost.anchored) return;
+        
+        const trackedInitialPos = { x: trackedParticle.x, y: trackedParticle.y };
+
+        for (const ghost of ghosts) {
+            if (ghost.id === trackedParticle.id || ghost.isBarycenter) continue;
+            if (ghost.path.length === 0) continue;
+
+            const relativePath = ghost.path.map((point, i) => {
+                let trackedPoint = trackedGhost.anchored ? {x: trackedGhost.x, y: trackedGhost.y} : (trackedPath[i] || trackedPath[trackedPath.length - 1]);
+                return {
+                    x: trackedInitialPos.x + (point.x - trackedPoint.x),
+                    y: trackedInitialPos.y + (point.y - trackedPoint.y)
+                };
+            });
+            predictedPaths.set(ghost.id, relativePath);
+        }
+    } else {
+        for (const ghost of ghosts) {
+            if (ghost.path.length > 0 && !ghost.isBarycenter) {
+                predictedPaths.set(ghost.id, ghost.path);
+            }
+        }
+    }
+}
+
+
+/* ---------- draw ---------- */
+let dragging=false, isPanning=false, sx,sy,cx,cy, lastX, lastY, SPAWN_MASS=DEFAULT_SM, THROW_MULT=DEFAULT_TSM;
+let addVelTarget = null;
+
+function draw(){
+    frameCounter++;
+    if (trackedParticle && !ps.find(p => p.id === trackedParticle.id)) {
+        trackedParticle = null;
+        if (relativeTrailsEnabled) {
+            relativeTrailsEnabled = false;
+            $('relTrailBtn').classList.remove('active');
+        }
+    }
+    
+    ctx.save();
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    if(trackedParticle) { viewX = trackedParticle.x; viewY = trackedParticle.y; }
+    applyView();
+
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+    if (orbitPredictionEnabled) {
+        ctx.lineWidth = Math.max(0.5, 1.2 / zoom); 
+        for(const p of ps) {
+            const path = predictedPaths.get(p.id);
+            if (path && path.length > 1) {
+                const baseColor = p.color();
+                for (let i = 1; i < path.length; i++) {
+                    const alpha = 0.7 - (0.4 * (i / path.length));
+                    ctx.beginPath();
+                    ctx.moveTo(path[i-1].x, path[i-1].y);
+                    ctx.lineTo(path[i].x, path[i].y);
+                    ctx.strokeStyle = baseColor.replace('hsl', 'hsla').replace(')', `, ${alpha})`);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    const isDrawingTrails = trailsEnabled || (relativeTrailsEnabled && trackedParticle);
+    if (isDrawingTrails) {
+        ctx.lineWidth = Math.max(0.5, 1.0 / zoom);
+        for (const p of ps) {
+            const trail = p.trail;
+            if (trail.length < 2 || p.isBarycenter || (relativeTrailsEnabled && p === trackedParticle)) continue;
+
+            const refX = relativeTrailsEnabled ? trackedParticle.x : 0;
+            const refY = relativeTrailsEnabled ? trackedParticle.y : 0;
+            
+            ctx.beginPath();
+            ctx.moveTo(refX + trail[0].x, refY + trail[0].y);
+            for(let i = 1; i < trail.length; i++) {
+                ctx.lineTo(refX + trail[i].x, refY + trail[i].y);
+            }
+            ctx.strokeStyle = p.color();
+            ctx.stroke();
+        }
+    }
+    ctx.restore();
+
+    for(const p of ps){
+        if(isNaN(p.x)||isNaN(p.y)) continue;
+        
+        if (p.isBarycenter) {
+            if (p.visible) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 6 / zoom, 0, Math.PI * 2);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5 / zoom;
+                ctx.stroke();
+            }
+        } else {
+            if (p.r * zoom < 0.5) continue;
+            ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=p.color(); ctx.fill();
+            if (p.frozen || selectedParticles.has(p)) {
+                 ctx.strokeStyle = '#fff'; ctx.lineWidth = p.r * 0.1; ctx.stroke();
+            }
+            if (p.anchored) {
+                ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = p.r * 0.15; ctx.stroke();
+            }
+        }
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    
+    if (dragging && spawnPreviewPath.length > 1 && orbitPredictionEnabled) {
+        const screenPath = spawnPreviewPath.map(p => worldToScreen(p.x, p.y));
+        for (let i = 1; i < screenPath.length; i++) {
+            const alpha = 0.8 - (0.6 * (i / screenPath.length));
+            ctx.beginPath();
+            ctx.moveTo(screenPath[i-1].x, screenPath[i-1].y);
+            ctx.lineTo(screenPath[i].x, screenPath[i].y);
+            ctx.strokeStyle = `rgba(0, 255, 100, ${alpha})`;
+            ctx.lineWidth = 2.0;
+            ctx.stroke();
+        }
+    }
+    
+    if (dragging || addVelTarget) {
+        let startX, startY;
+        if (addVelTarget) {
+            const sPos = worldToScreen(addVelTarget.x, addVelTarget.y);
+            startX = sPos.x; startY = sPos.y;
+        } else {
+            startX = sx; startY = sy;
+        }
+        
+        ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(cx, cy);
+        ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 3; ctx.stroke();
+        
+        const vx = (startX - cx) * 0.5 * THROW_MULT;
+        const vy = (startY - cy) * 0.5 * THROW_MULT;
+        ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(startX + vx, startY + vy);
+        ctx.strokeStyle = 'rgba(0,255,0,.5)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    
+    if (addVelocityMode) {
+        if (addVelToolState === 'drawing' || addVelToolState === 'locked' || addVelToolState === 'applyingVelocity') {
+            const box = selectionBox.screen;
+            if (box) {
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                ctx.fillRect(box.x, box.y, box.w, box.h);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(box.x, box.y, box.w, box.h);
+                ctx.setLineDash([]);
+            }
+        }
+        
+        if (addVelToolState === 'applyingVelocity') {
+            const box = selectionBox.screen;
+            if (box) {
+                const boxCenterX = box.x + box.w / 2;
+                const boxCenterY = box.y + box.h / 2;
+
+                const mouse_dx = cx - lockedBoxDragStart.x;
+                const mouse_dy = cy - lockedBoxDragStart.y;
+
+                const endX = boxCenterX + mouse_dx;
+                const endY = boxCenterY + mouse_dy;
+
+                ctx.beginPath(); ctx.moveTo(boxCenterX, boxCenterY); ctx.lineTo(endX, endY);
+                ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 3; ctx.stroke();
+                
+                const vx_preview = -mouse_dx * 0.5 * THROW_MULT;
+                const vy_preview = -mouse_dy * 0.5 * THROW_MULT;
+                
+                ctx.beginPath(); ctx.moveTo(boxCenterX, boxCenterY); ctx.lineTo(boxCenterX + vx_preview, boxCenterY + vy_preview);
+                ctx.strokeStyle = 'rgba(0,255,0,.8)'; ctx.lineWidth = 2; ctx.stroke();
+            }
+        }
+    }
+
+    if (selectionState === 'drawing' || selectionState === 'locked' || selectionState === 'draggingLocked') {
+        let box = (selectionState === 'drawing') ? selectionBox.screen : getScreenBoxFromWorldBox(selectionBox.world);
+        if(box) {
+            const color = barycenterMode ? 'rgba(170, 100, 255, 0.2)' : 'rgba(255, 255, 255, 0.2)';
+            const stroke = barycenterMode ? 'rgba(170, 100, 255, 0.7)' : 'rgba(255, 255, 255, 0.7)';
+            ctx.fillStyle = color;
+            ctx.fillRect(box.x, box.y, box.w, box.h);
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(box.x, box.y, box.w, box.h);
+            ctx.setLineDash([]);
+        }
+    }
+    ctx.restore();
+}
+function loop(){ 
+    if (!isPaused) {
+        step();
+    }
+    
+    if (dragging && orbitPredictionEnabled) {
+        const w = screenToWorld(sx, sy);
+        let vx = (sx - cx) * 0.5 * THROW_MULT / zoom;
+        let vy = (sy - cy) * 0.5 * THROW_MULT / zoom;
+        if (trackedParticle) { vx += trackedParticle.vx; vy += trackedParticle.vy; }
+        const ghost = { x: w.x, y: w.y, m: SPAWN_MASS, vx: vx, vy: vy };
+        spawnPreviewPath = predictSpawnPath(ghost, ps, trackedParticle);
+    }
+    
+    if (addVelocityMode && addVelToolState === 'locked') {
+        const currentParticles = Array.from(selectedParticles).filter(p => ps.includes(p));
+        selectedParticles = new Set(currentParticles);
+        if (selectedParticles.size === 0) {
+            addVelToolState = 'idle';
+            selectionBox = { world: null, screen: null };
+        }
+    }
+
+    if (orbitPredictionEnabled) {
+        predictAllOrbits();
+    }
+    
+    draw(); 
+    requestAnimationFrame(loop); 
+}
+
+/* ---------- UI ---------- */
+function $(id){ return document.getElementById(id); }
+const sliders={
+    gravitySlider:     {el:$('gravitySlider'),     val:$('gravityValue'),     def:DEFAULT_G,   suffix:''},
+    gravityMultSlider: {el:$('gravityMultSlider'), val:$('gravityMultValue'), def:DEFAULT_GM,  suffix:'×'},
+    timeSlider:        {el:$('timeSlider'),        val:$('timeValue'),        def:DEFAULT_TS,  suffix:'×'},
+    spawnMassSlider:   {el:$('spawnMassSlider'),   val:$('spawnMassValue'),   def:DEFAULT_SM,  suffix:''},
+    throwSpeedMultSlider:{el:$('throwSpeedMultSlider'),val:$('throwSpeedMultValue'),def:DEFAULT_TSM, suffix:'×'},
+    pathLengthSlider: {el:$('pathLengthSlider'),val:$('pathLengthValue'),def:DEFAULT_PATH_MULT, suffix:'×'}
+};
+function wire(){
+    for(const k in sliders){
+        const s=sliders[k];
+        s.el.value = s.def;
+        s.val.textContent = (k==='spawnMassSlider' || k==='pathLengthSlider' ? s.def : s.def.toFixed(1))+s.suffix;
+        s.el.addEventListener('input',()=>{
+            const v=parseFloat(s.el.value);
+            s.val.textContent=(k==='spawnMassSlider' || k==='pathLengthSlider' ? v : v.toFixed(1))+s.suffix;
+            if(k==='gravitySlider') G=v;
+            if(k==='gravityMultSlider') GM=v;
+            if(k==='timeSlider') TS=v;
+            if(k==='spawnMassSlider') SPAWN_MASS=v;
+            if(k==='throwSpeedMultSlider') THROW_MULT=v;
+            if(k==='pathLengthSlider') PATH_LENGTH_MULTIPLIER=v;
+        });
+    }
+}
+wire();
+
+$('clearAllButton').onclick=()=>{ ps=[]; nextId=1; resetHistory(); };
+$('resetAllButton').onclick=()=>{
+    for(const k in sliders) {
+        sliders[k].el.value = sliders[k].def;
+        sliders[k].el.dispatchEvent(new Event('input'));
+    }
+};
+$('pauseButton').onclick=(e)=>{
+    isPaused = !isPaused;
+    e.target.textContent = isPaused ? 'Resume' : 'Pause';
+};
+
+/* ---------- Object List ---------- */
+function updateObjectList() {
+    const listDiv = $('object-list');
+    if (!listDiv) return;
+    ps.sort((a, b) => b.m - a.m);
+
+    let html = '';
+    for (const p of ps) {
+        const isTrackedClass = (trackedParticle && p.id === trackedParticle.id) ? 'tracked' : '';
+        if (p.isBarycenter) {
+             const isHiddenClass = !p.visible ? 'hidden-vis' : '';
+             html += `
+                <div class="object-item ${isTrackedClass}" data-id="${p.id}">
+                    <div class="color-swatch" style="border: 1px dashed #fff; background: none; box-sizing: border-box;"></div>
+                    <div class="info">
+                        <div><b>${p.name || `Barycenter #${p.id}`}</b></div>
+                        <div>Total Mass: ${p.m.toFixed(1)}</div>
+                        <div>Bodies: ${p.connectedIds.length}</div>
+                    </div>
+                    <button class="toggle-vis-btn ${isHiddenClass}" data-id="${p.id}">👁️</button>
+                    <button class="edit-btn" data-id="${p.id}">✎</button>
+                    <button class="delete-btn" data-id="${p.id}">X</button>
+                </div>`;
+        } else {
+            const speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy).toFixed(2);
+            const direction = (Math.atan2(p.vy, p.vx) * 180 / Math.PI).toFixed(1);
+            const diameter = (p.r * 2).toFixed(2);
+            html += `
+                <div class="object-item ${isTrackedClass}" data-id="${p.id}">
+                    <div class="color-swatch" style="background-color: ${p.color()};"></div>
+                    <div class="info">
+                        <div><b>${p.name || `Body #${p.id}`}</b></div>
+                        <div>Mass: ${p.m.toFixed(1)}</div>
+                        <div>Diameter: ${diameter}</div>
+                        <div>Vel: ${speed} @ ${direction}°</div>
+                    </div>
+                    <button class="edit-btn" data-id="${p.id}">✎</button>
+                    <button class="delete-btn" data-id="${p.id}">X</button>
+                </div>`;
+        }
+    }
+    listDiv.innerHTML = html;
+}
+$('object-list').addEventListener('click', (e) => {
+    const item = e.target.closest('.object-item');
+    if (!item) return;
+
+    const id = parseInt(item.dataset.id);
+    if (isNaN(id)) return;
+    const p_clicked = ps.find(p => p.id === id);
+    if (!p_clicked) return;
+
+    if (e.target.classList.contains('delete-btn')) {
+        recordHistory({ type: 'delete', particle: cloneParticle(p_clicked) });
+        ps = ps.filter(p => p.id !== id);
+        if (trackedParticle && trackedParticle.id === id) trackedParticle = null;
+        if (currentlyEditing && currentlyEditing.id === id) hideEditPanel();
+    } else if (e.target.classList.contains('edit-btn')) {
+        showEditPanel(p_clicked);
+    } else if (e.target.classList.contains('toggle-vis-btn')) {
+        if (p_clicked.isBarycenter) {
+            p_clicked.visible = !p_clicked.visible;
+            e.target.classList.toggle('hidden-vis', !p_clicked.visible);
+        }
+    } else {
+        trackedParticle = p_clicked;
+        if (!planetTrackerMode) {
+            deactivateAllTools();
+            planetTrackerMode = true;
+            $('trackerBtn').classList.add('active');
+        }
+    }
+});
+setInterval(updateObjectList, 250);
+
+/* ---------- Utilities Toolbar ---------- */
+$('utilitiesButton').onclick = () => {
+    $('utilitiesToolbar').classList.toggle('expanded');
+};
+
+function deactivateAllTools(except = null) {
+    if (except !== 'tracker') { planetTrackerMode = false; $('trackerBtn').classList.remove('active'); }
+    if (except !== 'select') { planetSelectMode = false; $('selectBtn').classList.remove('active'); unfreezeSelected(); selectedParticles.clear(); selectionState = 'idle'; }
+    if (except !== 'editor') { planetEditorMode = false; $('editorBtn').classList.remove('active'); hideEditPanel(); }
+    if (except !== 'addVel') { addVelocityMode = false; $('addVelBtn').classList.remove('active'); addVelToolState = 'idle'; selectedParticles.clear(); selectionBox = {world: null, screen: null}; addVelTarget = null; }
+    if (except !== 'anchor') { anchorMode = false; $('anchorBtn').classList.remove('active'); }
+    if (except !== 'barycenter') { barycenterMode = false; $('barycenterBtn').classList.remove('active'); selectionState = 'idle'; selectionBox = {world:null, screen:null}; }
+}
+
+function unfreezeSelected() {
+    selectedParticles.forEach(p => {
+        if (p.snapshot) {
+            p.vx = p.snapshot.vx;
+            p.vy = p.snapshot.vy;
+            p.snapshot = null;
+        }
+        p.frozen = false;
+    });
+    selectionBox = {world: null, screen: null};
+}
+
+function clearAllVisualAids() {
+    ps.forEach(p => p.trail = []);
+    predictedPaths.clear();
+}
+
+$('trackerBtn').onclick = (e) => {
+    planetTrackerMode = !planetTrackerMode;
+    if (planetTrackerMode) { deactivateAllTools('tracker'); e.target.classList.add('active'); } 
+    else { trackedParticle = null; e.target.classList.remove('active'); }
+};
+$('selectBtn').onclick = (e) => {
+    planetSelectMode = !planetSelectMode;
+    if (planetSelectMode) { deactivateAllTools('select'); e.target.classList.add('active'); } 
+    else { e.target.classList.remove('active'); unfreezeSelected(); selectedParticles.clear(); selectionState = 'idle'; }
+};
+$('addVelBtn').onclick = (e) => {
+    addVelocityMode = !addVelocityMode;
+    if (addVelocityMode) { deactivateAllTools('addVel'); e.target.classList.add('active'); } 
+    else { e.target.classList.remove('active'); }
+};
+$('anchorBtn').onclick = (e) => {
+    anchorMode = !anchorMode;
+    if (anchorMode) { deactivateAllTools('anchor'); e.target.classList.add('active'); } 
+    else { e.target.classList.remove('active'); }
+};
+$('trailsBtn').onclick = (e) => {
+    trailsEnabled = !trailsEnabled;
+    e.target.classList.toggle('active', trailsEnabled);
+    if(trailsEnabled) {
+        clearAllVisualAids();
+        orbitPredictionEnabled = false; relativeTrailsEnabled = false;
+        $('orbitBtn').classList.remove('active'); $('relTrailBtn').classList.remove('active');
+    }
+};
+$('relTrailBtn').onclick = (e) => {
+    if (!trackedParticle) {
+        relativeTrailsEnabled = false;
+        e.target.classList.remove('active');
+        return;
+    }
+    relativeTrailsEnabled = !relativeTrailsEnabled;
+    e.target.classList.toggle('active', relativeTrailsEnabled);
+    if(relativeTrailsEnabled) {
+        clearAllVisualAids();
+        trailsEnabled = false; orbitPredictionEnabled = false;
+        $('trailsBtn').classList.remove('active'); $('orbitBtn').classList.remove('active');
+    }
+};
+$('orbitBtn').onclick = (e) => {
+    orbitPredictionEnabled = !orbitPredictionEnabled;
+    e.target.classList.toggle('active', orbitPredictionEnabled);
+    if (orbitPredictionEnabled) {
+        clearAllVisualAids();
+        trailsEnabled = false; relativeTrailsEnabled = false;
+        $('trailsBtn').classList.remove('active'); $('relTrailBtn').classList.remove('active');
+    } else {
+        predictedPaths.clear();
+    }
+};
+$('editorBtn').onclick = (e) => {
+    planetEditorMode = !planetEditorMode;
+    if(planetEditorMode){ deactivateAllTools('editor'); e.target.classList.add('active'); } 
+    else { e.target.classList.remove('active'); hideEditPanel(); }
+};
+$('barycenterBtn').onclick = (e) => {
+    barycenterMode = !barycenterMode;
+    if(barycenterMode){ deactivateAllTools('barycenter'); e.target.classList.add('active'); } 
+    else { e.target.classList.remove('active'); selectionState = 'idle'; selectionBox = {world: null, screen: null}; }
+};
+
+/* ---------- Planet Editor Panel ---------- */
+function showEditPanel(p) {
+    if (!p) return;
+    currentlyEditing = p;
+    const panel = $('edit-panel');
+    $('edit-id').value = p.id;
+    $('edit-name').value = p.name || '';
+    $('edit-mass').value = p.m;
+    $('edit-mass').disabled = p.isBarycenter;
+    $('edit-color').value = p.customColor || '#ffffff';
+    $('edit-color').disabled = p.isBarycenter;
+    
+    panel.style.display = 'block';
+    panel.style.left = `${(window.innerWidth - panel.offsetWidth) / 2}px`;
+    panel.style.top = `${(window.innerHeight - panel.offsetHeight) / 2}px`;
+}
+function hideEditPanel() {
+    currentlyEditing = null;
+    $('edit-panel').style.display = 'none';
+}
+$('saveEditBtn').onclick = () => {
+    const p = ps.find(p => p.id === parseInt($('edit-id').value));
+    if(p) {
+        const beforeState = { id: p.id, name: p.name, m: p.m, r: p.r, customColor: p.customColor };
+        
+        p.name = $('edit-name').value || null;
+        if (!p.isBarycenter) {
+            p.m = Math.max(1, parseFloat($('edit-mass').value));
+            p.r = Math.sqrt(p.m);
+            p.customColor = $('edit-color').value;
+        }
+
+        const afterState = { id: p.id, name: p.name, m: p.m, r: p.r, customColor: p.customColor };
+        recordHistory({type: 'edit', before: beforeState, after: afterState});
+    }
+    hideEditPanel();
+};
+$('cancelEditBtn').onclick = hideEditPanel;
+
+// Draggable Panel Logic
+let isDraggingPanel = false, panelOffsetX, panelOffsetY;
+const editPanel = $('edit-panel');
+const editPanelHeader = $('edit-panel-header');
+
+editPanelHeader.addEventListener('mousedown', e => {
+    isDraggingPanel = true;
+    panelOffsetX = e.clientX - editPanel.offsetLeft;
+    panelOffsetY = e.clientY - editPanel.offsetTop;
+    e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+    if (!isDraggingPanel) return;
+    let newX = e.clientX - panelOffsetX;
+    let newY = e.clientY - panelOffsetY;
+    
+    newX = Math.max(0, Math.min(newX, window.innerWidth - editPanel.offsetWidth));
+    newY = Math.max(0, Math.min(newY, window.innerHeight - editPanel.offsetHeight));
+
+    editPanel.style.left = `${newX}px`;
+    editPanel.style.top = `${newY}px`;
+});
+document.addEventListener('mouseup', () => { isDraggingPanel = false; });
+
+
+/* ---------- mouse controls ---------- */
+function getParticleAtScreenPos(x, y) {
+    const worldPos = screenToWorld(x,y);
+    for (const p of ps.slice().reverse()) {
+        if (p.isBarycenter) continue;
+        const dx = p.x - worldPos.x;
+        const dy = p.y - worldPos.y;
+        if (dx*dx + dy*dy < p.r*p.r) return p;
+    }
+    return null;
+}
+
+function isPointInWorldBox(px, py, box) {
+    if (!box) return false;
+    return px >= box.x && px <= box.x + box.w && py >= box.y && py <= box.y + box.h;
+}
+
+function isPointInRect(px, py, rect) {
+    if (!rect) return false;
+    return px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
+}
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousedown', e => {
+    const clickedParticle = getParticleAtScreenPos(e.clientX, e.clientY);
+    
+    if (e.button !== 0) {
+        if (trackedParticle) {
+            trackedParticle = null;
+            planetTrackerMode = false;
+            $('trackerBtn').classList.remove('active');
+        }
+        isPanning = true;
+        lastX = e.clientX; lastY = e.clientY;
+        return;
+    }
+
+    if (planetTrackerMode && clickedParticle) { trackedParticle = clickedParticle; return; }
+    if (planetEditorMode && clickedParticle) { showEditPanel(clickedParticle, e); return; }
+
+    if (addVelocityMode) {
+        if (addVelToolState === 'locked') {
+            if (isPointInRect(e.clientX, e.clientY, selectionBox.screen)) {
+                addVelToolState = 'applyingVelocity';
+                lockedBoxDragStart = { x: e.clientX, y: e.clientY };
+                return;
+            } else {
+                addVelToolState = 'idle';
+                selectedParticles.clear();
+                selectionBox.screen = null;
+            }
+        }
+        
+        if (clickedParticle) {
+            addVelTarget = clickedParticle;
+            sx = cx = e.clientX; sy = cy = e.clientY;
+        } else {
+            addVelToolState = 'drawing';
+            selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+        }
+        return;
+    }
+    if (anchorMode) {
+        if (clickedParticle) {
+            const beforeState = { id: clickedParticle.id, anchored: clickedParticle.anchored };
+            clickedParticle.anchored = !clickedParticle.anchored;
+            const afterState = { id: clickedParticle.id, anchored: clickedParticle.anchored };
+            recordHistory({ type: 'anchor', before: beforeState, after: afterState });
+        }
+        return;
+    }
+    
+    if (barycenterMode) {
+        if (!clickedParticle) {
+            selectionState = 'drawing';
+            selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+        }
+        return;
+    }
+
+    if (planetSelectMode) {
+        if (selectionState === 'locked') {
+            const screenBox = getScreenBoxFromWorldBox(selectionBox.world);
+            if (isPointInRect(e.clientX, e.clientY, screenBox)) {
+                selectionState = 'draggingLocked';
+                lockedBoxDragStart = { x: e.clientX, y: e.clientY, worldX: selectionBox.world.x, worldY: selectionBox.world.y };
+                selectedParticles.forEach(p => p.snapshot.offsetX = p.x - selectionBox.world.x, p.snapshot.offsetY = p.y - selectionBox.world.y);
+            } else {
+                unfreezeSelected();
+                selectionState = 'idle';
+            }
+        } else if (selectionState === 'idle') {
+            if (!clickedParticle) {
+                selectionState = 'drawing';
+                selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+            }
+        }
+        return;
+    }
+
+    if (planetEditorMode) return;
+
+    dragging = true;
+    sx = cx = e.clientX;
+    sy = cy = e.clientY;
+});
+
+canvas.addEventListener('mousemove', e => {
+    if (isPanning) {
+        viewX -= (e.clientX - lastX) / zoom;
+        viewY -= (e.clientY - lastY) / zoom;
+        lastX = e.clientX; lastY = e.clientY;
+    } else {
+        cx = e.clientX; cy = e.clientY;
+        if (addVelocityMode && addVelToolState === 'drawing') {
+            selectionBox.screen.w = e.clientX - selectionBox.screen.x;
+            selectionBox.screen.h = e.clientY - selectionBox.screen.y;
+        } else if (selectionState === 'drawing') {
+            selectionBox.screen.w = e.clientX - selectionBox.screen.x;
+            selectionBox.screen.h = e.clientY - selectionBox.screen.y;
+        } else if (selectionState === 'draggingLocked') {
+            const wdx = (e.clientX - lockedBoxDragStart.x) / zoom;
+            const wdy = (e.clientY - lockedBoxDragStart.y) / zoom;
+            selectionBox.world.x = lockedBoxDragStart.worldX + wdx;
+            selectionBox.world.y = lockedBoxDragStart.worldY + wdy;
+            selectedParticles.forEach(p => {
+                p.x = selectionBox.world.x + p.snapshot.offsetX;
+                p.y = selectionBox.world.y + p.snapshot.offsetY;
+            });
+        }
+    }
+});
+canvas.addEventListener('mouseup', e => {
+    if (e.button === 2) { isPanning = false; return; }
+
+    if (addVelocityMode) {
+        if (addVelTarget) {
+            const vx = (sx - e.clientX) * 0.5 * THROW_MULT / zoom;
+            const vy = (sy - e.clientY) * 0.5 * THROW_MULT / zoom;
+            
+            const beforeState = { id: addVelTarget.id, vx: addVelTarget.vx, vy: addVelTarget.vy };
+            addVelTarget.vx += vx; addVelTarget.vy += vy;
+            const afterState = { id: addVelTarget.id, vx: addVelTarget.vx, vy: addVelTarget.vy };
+
+            recordHistory({ type: 'addVelocity', before: beforeState, after: afterState });
+            addVelTarget = null;
+
+        } else if (addVelToolState === 'drawing') {
+            const box = selectionBox.screen;
+            const r = { l: Math.min(box.x, box.x + box.w), r: Math.max(box.x, box.x + box.w),
+                        t: Math.min(box.y, box.y + box.h), b: Math.max(box.y, box.y + box.h) };
+            
+            selectionBox.screen = {x: r.l, y: r.t, w: r.r - r.l, h: r.b - r.t};
+
+            if (selectionBox.screen.w < 5 && selectionBox.screen.h < 5) {
+                addVelToolState = 'idle';
+                selectionBox.screen = null;
+                return;
+            }
+
+            const w_tl = screenToWorld(r.l, r.t);
+            const w_br = screenToWorld(r.r, r.b);
+            const world_box_selection = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
+            
+            selectedParticles.clear();
+            ps.forEach(p => {
+                if (!p.isBarycenter && isPointInWorldBox(p.x, p.y, world_box_selection)) {
+                    selectedParticles.add(p);
+                }
+            });
+
+            if (selectedParticles.size > 0) {
+                addVelToolState = 'locked';
+            } else {
+                addVelToolState = 'idle';
+                selectionBox.screen = null;
+            }
+
+        } else if (addVelToolState === 'applyingVelocity') {
+            const screen_dx = e.clientX - lockedBoxDragStart.x;
+            const screen_dy = e.clientY - lockedBoxDragStart.y;
+            
+            const vx = -screen_dx * 0.5 * THROW_MULT / zoom;
+            const vy = -screen_dy * 0.5 * THROW_MULT / zoom;
+            
+            const beforeStates = [], afterStates = [];
+            selectedParticles.forEach(p => {
+                beforeStates.push({ id: p.id, vx: p.vx, vy: p.vy });
+                p.vx += vx; p.vy += vy;
+                afterStates.push({ id: p.id, vx: p.vx, vy: p.vy });
+            });
+            if (beforeStates.length > 0) {
+                recordHistory({ type: 'batchEdit', before: beforeStates, after: afterStates });
+            }
+            addVelToolState = 'locked';
+        }
+        return;
+    }
+    
+    if (barycenterMode && selectionState === 'drawing') {
+        selectionState = 'idle';
+        const r = { l: Math.min(selectionBox.screen.x, selectionBox.screen.x + selectionBox.screen.w),
+                    r: Math.max(selectionBox.screen.x, selectionBox.screen.x + selectionBox.screen.w),
+                    t: Math.min(selectionBox.screen.y, selectionBox.screen.y + selectionBox.screen.h),
+                    b: Math.max(selectionBox.screen.y, selectionBox.screen.y + selectionBox.screen.h) };
+        const w_tl = screenToWorld(r.l, r.t);
+        const w_br = screenToWorld(r.r, r.b);
+        selectionBox.world = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
+
+        const containedParticles = ps.filter(p => !p.isBarycenter && isPointInWorldBox(p.x, p.y, selectionBox.world));
+        
+        if (containedParticles.length >= 2) {
+            let totalMass = 0, comX = 0, comY = 0;
+            const ids = containedParticles.map(p => {
+                totalMass += p.m;
+                comX += p.m * p.x;
+                comY += p.m * p.y;
+                return p.id;
+            });
+            const barycenter = new P(comX / totalMass, comY / totalMass, totalMass);
+            barycenter.isBarycenter = true;
+            barycenter.connectedIds = ids;
+            barycenter.name = `Barycenter #${barycenter.id}`;
+            ps.push(barycenter);
+            recordHistory({ type: 'spawn', particle: cloneParticle(barycenter) });
+        }
+        selectionBox = { world: null, screen: null };
+    } else if (dragging) {
+        dragging = false;
+        spawnPreviewPath = [];
+        const w = screenToWorld(sx, sy);
+        let vx = (sx - e.clientX) * 0.5 * THROW_MULT / zoom;
+        let vy = (sy - e.clientY) * 0.5 * THROW_MULT / zoom;
+        if(trackedParticle) { vx += trackedParticle.vx; vy += trackedParticle.vy; }
+        
+        const newParticle = new P(w.x, w.y, SPAWN_MASS, vx, vy);
+        ps.push(newParticle);
+        recordHistory({ type: 'spawn', particle: cloneParticle(newParticle) });
+    } else if (selectionState === 'drawing') {
+        selectionState = 'locked';
+        const r = { l: Math.min(selectionBox.screen.x, selectionBox.screen.x + selectionBox.screen.w),
+                    r: Math.max(selectionBox.screen.x, selectionBox.screen.x + selectionBox.screen.w),
+                    t: Math.min(selectionBox.screen.y, selectionBox.screen.y + selectionBox.screen.h),
+                    b: Math.max(selectionBox.screen.y, selectionBox.screen.y + selectionBox.screen.h) };
+        const w_tl = screenToWorld(r.l, r.t);
+        const w_br = screenToWorld(r.r, r.b);
+        selectionBox.world = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
+        
+        selectedParticles.clear();
+        ps.forEach(p => {
+            if (isPointInWorldBox(p.x, p.y, selectionBox.world)) {
+                p.snapshot = { vx: p.vx, vy: p.vy, offsetX: p.x - selectionBox.world.x, offsetY: p.y - selectionBox.world.y };
+                p.frozen = true;
+                selectedParticles.add(p);
+            }
+        });
+    } else if (selectionState === 'draggingLocked') {
+        selectionState = 'locked';
+    }
+});
+
+canvas.addEventListener('dblclick', e => {
+    if (getParticleAtScreenPos(e.clientX, e.clientY)) return;
+    trackedParticle = null;
+    if (planetSelectMode) {
+        unfreezeSelected();
+        selectedParticles.clear();
+        selectionState = 'idle';
+    }
+});
+
+window.addEventListener('keydown', e => {
+    if (document.activeElement.tagName === 'INPUT') return;
+    if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        undo();
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+    }
+    if (e.key === 'Enter' && planetSelectMode) {
+        unfreezeSelected();
+        selectedParticles.clear();
+        selectionState = 'idle';
+    }
+    if(e.code === 'Space') {
+        e.preventDefault();
+        isPaused = !isPaused;
+        $('pauseButton').textContent = isPaused ? 'Resume' : 'Pause';
+    }
+});
+
+canvas.addEventListener('mouseleave', () => { isPanning = false; dragging = false; addVelTarget = null; spawnPreviewPath = []; addVelToolState = 'idle'; });
+canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const worldBefore = screenToWorld(e.clientX, e.clientY);
+    zoom *= (e.deltaY < 0 ? 1.1 : 0.9);
+    zoom = Math.min(100, zoom);
+    const worldAfter = screenToWorld(e.clientX, e.clientY);
+    viewX += worldBefore.x - worldAfter.x;
+    viewY += worldBefore.y - worldAfter.y;
+});
+
+/* ---------- start ---------- */
+resetPs();
+loop();
+</script>
+</body>
+</html>
