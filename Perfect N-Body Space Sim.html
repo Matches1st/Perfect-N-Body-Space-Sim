@@ -480,15 +480,16 @@ const REF_DIAMETER = 2 * Math.sqrt(10);
 
 /* ---------- particle ---------- */
 let nextId = 1;
+let bodyNameCounter = 1;
 class P{
     constructor(x,y,m=1,vx=0,vy=0){
-        this.id = nextId++; this.name = null;
+        this.id = nextId++;
+        this.name = null;
         this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.m=m; this.r=Math.sqrt(this.m);
         this.ax=0; this.ay=0; this.merged=false;
         this.customColor = null;
         this.anchored = false;
         this.trail = [];
-        // Barycenter properties
         this.isBarycenter = false;
         this.connectedIds = [];
         this.visible = true;
@@ -500,7 +501,7 @@ class P{
     }
 }
 let ps = [];
-function resetPs(){ ps=[]; nextId = 1; resetHistory(); }
+function resetPs(){ ps=[]; nextId = 1; bodyNameCounter = 1; resetHistory(); }
 function cloneParticle(p) {
     const clone = Object.assign(new P(0,0), JSON.parse(JSON.stringify(p)));
     return clone;
@@ -1189,7 +1190,7 @@ function loop(){
     }
     
     // Cleanup selectedParticles if a particle was deleted/merged
-    if (barycenterMode && selectedParticles.size > 0) {
+    if (selectedParticles.size > 0) {
         const currentParticles = Array.from(selectedParticles).filter(p => ps.includes(p));
         if (currentParticles.length !== selectedParticles.size) {
             selectedParticles = new Set(currentParticles);
@@ -1206,8 +1207,6 @@ function loop(){
     }
     
     if (addVelocityMode && addVelToolState === 'locked') {
-        const currentParticles = Array.from(selectedParticles).filter(p => ps.includes(p));
-        selectedParticles = new Set(currentParticles);
         if (selectedParticles.size === 0) {
             addVelToolState = 'idle';
             selectionBox.screen = null;
@@ -1319,7 +1318,7 @@ function wire(){
 }
 wire();
 
-$('clearAllButton').onclick=()=>{ ps=[]; nextId=1; resetHistory(); };
+$('clearAllButton').onclick = resetPs;
 $('resetAllButton').onclick=()=>{
     for(const k in sliders) {
         sliders[k].el.value = sliders[k].def;
@@ -1595,6 +1594,8 @@ function loadSimulationData(data) {
             throw new Error("Invalid simulation file structure.");
         }
 
+        bodyNameCounter = 1;
+
         // Restore Sliders
         G = data.sliders.gravity; GM = data.sliders.gravityMult; TS = data.sliders.timeSpeed;
         SPAWN_MASS = data.sliders.spawnMass; THROW_MULT = data.sliders.throwSpeedMult; PATH_LENGTH_MULTIPLIER = data.sliders.pathLength;
@@ -1606,9 +1607,17 @@ function loadSimulationData(data) {
         // Restore Particles
         let maxId = 0;
         ps = data.particles.map(p_data => {
-            const newP = new P(p_data.x, p_data.y, p_data.m, p_data.vx, p_data.vy);
+            const newP = new P(0,0);
             Object.assign(newP, p_data);
+            newP.r = Math.sqrt(newP.m); // Recalculate radius
             if (p_data.id > maxId) maxId = p_data.id;
+            
+            if (newP.name && newP.name.startsWith("Body ")) {
+                const num = parseInt(newP.name.substring(5));
+                if (!isNaN(num) && num >= bodyNameCounter) {
+                    bodyNameCounter = num + 1;
+                }
+            }
             return newP;
         });
         nextId = maxId + 1;
@@ -1619,11 +1628,9 @@ function loadSimulationData(data) {
         relativeTrailsEnabled = data.settings.relativeTrailsEnabled; $('relTrailBtn').classList.toggle('active', relativeTrailsEnabled);
         orbitPredictionEnabled = data.settings.orbitPredictionEnabled; $('orbitBtn').classList.toggle('active', orbitPredictionEnabled);
 
-        // Restore Tracked Particle (using setter to clear trails)
         const newTrackedParticle = data.trackedParticleId ? ps.find(p => p.id === data.trackedParticleId) || null : null;
         setTrackedParticle(newTrackedParticle);
         
-        // Restore View
         if (data.view) { zoom = data.view.zoom; viewX = data.view.viewX; viewY = data.view.viewY; } 
         else { zoom = DEFAULT_ZOOM; viewX = 0; viewY = 0; }
 
@@ -1878,13 +1885,14 @@ canvas.addEventListener('mouseup', e => {
         
         const EG = G * GM;
         const totalMass = trackedParticle.m + SPAWN_MASS;
-        const v = Math.sqrt((EG * totalMass) / r); // Corrected orbital speed for two-body problem
+        const v = Math.sqrt((EG * totalMass) / r);
         const angle = Math.atan2(w.y - trackedParticle.y, w.x - trackedParticle.x);
         
         let vx = -v * Math.sin(angle) + trackedParticle.vx;
         let vy = v * Math.cos(angle) + trackedParticle.vy;
         
         const newParticle = new P(w.x, w.y, SPAWN_MASS, vx, vy);
+        newParticle.name = "Body " + bodyNameCounter++;
         ps.push(newParticle);
         recordHistory({ type: 'spawn', particle: cloneParticle(newParticle) });
         return;
@@ -1976,6 +1984,7 @@ canvas.addEventListener('mouseup', e => {
         if(trackedParticle) { vx += trackedParticle.vx; vy += trackedParticle.vy; }
         
         const newParticle = new P(w.x, w.y, SPAWN_MASS, vx, vy);
+        newParticle.name = "Body " + bodyNameCounter++;
         ps.push(newParticle);
         recordHistory({ type: 'spawn', particle: cloneParticle(newParticle) });
     }
@@ -2007,7 +2016,7 @@ window.addEventListener('keydown', e => {
             const barycenter = new P(comX / totalMass, comY / totalMass, totalMass);
             barycenter.isBarycenter = true;
             barycenter.connectedIds = ids;
-            barycenter.name = `Barycenter #${barycenter.id}`;
+            barycenter.name = "Body " + bodyNameCounter++;
             ps.push(barycenter);
             recordHistory({ type: 'spawn', particle: cloneParticle(barycenter) });
         }
