@@ -189,7 +189,6 @@
     .delete-btn, .edit-btn, .toggle-vis-btn {
         width: 24px;
         height: 24px;
-        line-height: 24px;
         border-radius: 50%;
         color: #fff;
         border: none;
@@ -198,9 +197,12 @@
         padding: 0;
         font-size: 14px;
         transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .delete-btn { background: rgba(255, 85, 85, 0.8); }
-    .edit-btn { background: rgba(0, 123, 255, 0.8); }
+    .edit-btn { background: rgba(0, 123, 255, 0.8); font-size: 16px; }
     .toggle-vis-btn { background: rgba(100, 100, 100, 0.8); }
     .delete-btn:hover, .edit-btn:hover, .toggle-vis-btn:hover {
         transform: scale(1.1);
@@ -208,10 +210,10 @@
     }
 
     /* Custom Scrollbar for Object List */
-    #object-list::-webkit-scrollbar { width: 6px; }
-    #object-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 3px; }
-    #object-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
-    #object-list::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+    #object-list::-webkit-scrollbar, #loaded-systems-container::-webkit-scrollbar { width: 6px; }
+    #object-list::-webkit-scrollbar-track, #loaded-systems-container::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 3px; }
+    #object-list::-webkit-scrollbar-thumb, #loaded-systems-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
+    #object-list::-webkit-scrollbar-thumb:hover, #loaded-systems-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
 
 
     /* --- Utilities Toolbar --- */
@@ -276,11 +278,11 @@
     .tool-btn.disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        /* pointer-events: none; - REMOVED TO ALLOW HOVER */
+        pointer-events: none;
     }
 
-    /* --- Modal Panels (Edit, Save/Load, Presets) --- */
-    #edit-panel, #save-load-panel, #presets-panel {
+    /* --- Modal Panels (Edit, Save/Load, Presets, Custom Bodies) --- */
+    #edit-panel, #save-load-panel, #presets-panel, #custom-bodies-panel {
         position: absolute;
         background: linear-gradient(135deg, rgba(30, 34, 42, 0.95), rgba(50, 54, 62, 0.95));
         color: #fff;
@@ -294,7 +296,7 @@
     }
     #edit-panel { width: 240px; }
 
-    #edit-panel h4, #save-load-panel h4, #presets-panel h4 {
+    #edit-panel h4, #save-load-panel h4, #presets-panel h4, #custom-bodies-panel h4 {
         margin-top: 0;
         padding-bottom: 15px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -338,35 +340,47 @@
         filter: brightness(1.2);
     }
     
-    /* --- Save & Load / Presets Panel --- */
+    /* --- Save & Load / Presets / Custom Bodies Panel --- */
     #save-load-panel { width: 320px; height: 480px; flex-direction: column; }
     #presets-panel { width: 360px; height: 520px; flex-direction: column; }
+    #custom-bodies-panel { width: 320px; height: auto; max-height: 60vh; flex-direction: column; }
     
-    #save-load-panel h4, #presets-panel h4 { display: flex; justify-content: space-between; align-items: center; }
+    #save-load-panel h4, #presets-panel h4, #custom-bodies-panel h4 { display: flex; justify-content: space-between; align-items: center; }
     
-    #closeSaveLoadBtn, #closePresetsBtn {
+    #closeSaveLoadBtn, #closePresetsBtn, #closeCustomBodiesBtn {
         background: transparent; border: none; color: #fff; font-size: 24px; font-weight: 300; line-height: 1; padding: 0 5px; opacity: 0.7;
     }
-    #closeSaveLoadBtn:hover, #closePresetsBtn:hover { opacity: 1; }
+    #closeSaveLoadBtn:hover, #closePresetsBtn:hover, #closeCustomBodiesBtn:hover { opacity: 1; }
     
     .panel-section { padding: 20px 0; }
     #presets-panel .panel-section { padding: 10px 20px; flex-grow: 1; overflow-y: auto; }
+    #loaded-systems-container { flex-grow: 1; overflow-y: auto; padding: 10px 20px !important; }
 
     .panel-divider { border: none; border-top: 1px solid rgba(255, 255, 255, 0.15); margin: 0; }
     
-    #save-load-panel h5 { margin-top: 0; margin-bottom: 25px; font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.9); text-align: center; }
+    #save-load-panel h5, #custom-bodies-panel h5 { margin-top: 0; margin-bottom: 15px; font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.9); text-align: center; }
     
-    #save-load-panel button, .preset-item-btn {
+    #save-load-panel button, #custom-bodies-panel button, .preset-item-btn {
         width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    #save-load-panel button:hover, .preset-item-btn:hover { transform: scale(1.03); filter: brightness(1.1); }
+    #save-load-panel button:hover, #custom-bodies-panel button:hover, .preset-item-btn:hover { transform: scale(1.03); filter: brightness(1.1); }
     
-    #saveSimBtn, .preset-item-btn { background: rgba(0, 123, 255, 0.8); margin-bottom: 12px; }
+    #saveSimBtn, .preset-item-btn, #saveCustomSystemBtn { background: rgba(0, 123, 255, 0.8); margin-bottom: 12px; }
     #loadSimBtn { background: rgba(40, 167, 69, 0.8); }
-    #chooseFileBtn { background: rgba(108, 117, 125, 0.8); }
+    #chooseFileBtn, #loadCustomSystemBtn { background: rgba(108, 117, 125, 0.8); }
     
     .file-input-wrapper { margin-bottom: 20px; }
     #fileNameSpan { display: block; margin-top: 15px; padding: 0 10px; font-style: italic; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+
+    #loaded-systems-list .loaded-system-item {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    #loaded-systems-list .loaded-system-item button { font-size: 14px; padding: 8px 12px; }
+    #loaded-systems-list .loaded-system-item .system-name-btn { flex-grow: 1; margin-right: 8px; text-align: left; }
+    #loaded-systems-list .loaded-system-item .edit-name-btn {
+        width: 40px;
+        flex-shrink: 0;
+    }
 
     /* --- Tooltip --- */
     .tooltip {
@@ -414,6 +428,7 @@
         border-color: transparent transparent rgba(30, 34, 42, 0.95) transparent;
     }
 </style>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -463,6 +478,7 @@
         <button id="barycenterBtn" class="tool-btn">Barycenter</button>
         <button id="saveLoadBtn" class="tool-btn">Save & Load</button>
         <button id="presetsBtn" class="tool-btn">Presets</button>
+        <button id="customBodiesBtn" class="tool-btn">Custom Bodies</button>
     </div>
 </div>
 
@@ -502,6 +518,29 @@
         <!-- Preset buttons will be dynamically inserted here -->
     </div>
 </div>
+
+<div id="save-instruction" style="position: absolute; top: 20px; left: 230px; transform: none; color: white; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; font-size: 16px; z-index: 15; display: none;">
+    Draw a bounding box around the system you want to save.
+</div>
+
+<div id="custom-bodies-panel">
+    <h4 id="custom-bodies-panel-header">Custom Celestial Bodies <button id="closeCustomBodiesBtn">&times;</button></h4>
+    <div class="panel-section">
+        <button id="saveCustomSystemBtn">Save New System</button>
+        <div class="file-input-wrapper" style="margin-top: 12px; margin-bottom: 0;">
+            <button id="loadCustomSystemBtn">Load From File</button>
+            <input type="file" id="loadCustomSystemInput" accept=".json" style="display: none;">
+        </div>
+    </div>
+    <hr class="panel-divider">
+    <div class="panel-section" id="loaded-systems-container">
+        <h5>Loaded Celestial Bodies</h5>
+        <div id="loaded-systems-list">
+            <!-- Loaded systems will be dynamically inserted here -->
+        </div>
+    </div>
+</div>
+
 
 <script>
 /* ---------- defaults ---------- */
@@ -555,7 +594,7 @@ function cloneParticle(p) {
 
 /* ---------- state variables ---------- */
 let trackedParticle = null;
-let planetTrackerMode = false, planetEditorMode = false, addVelocityMode = false, anchorMode = false, barycenterMode = false, autoOrbitMode = false;
+let planetTrackerMode = false, planetEditorMode = false, addVelocityMode = false, anchorMode = false, barycenterMode = false, autoOrbitMode = false, customBodiesMode = false;
 let trailsEnabled = false, orbitPredictionEnabled = false, relativeTrailsEnabled = false;
 let selectedParticles = new Set();
 let selectionBox = {world: null, screen: null};
@@ -568,6 +607,13 @@ let spawnPreviewPath = [];
 let isPaused = false;
 let PATH_LENGTH_MULTIPLIER = DEFAULT_PATH_MULT;
 let frameCounter = 0;
+
+// Custom Bodies Tool State
+let saveInProgress = false;
+let hologramSystem = null;
+let hologramActive = false;
+let loadedSystems = [];
+let customBodyCounter = 1;
 
 /* ---------- Undo/Redo System ---------- */
 const MAX_HISTORY = 50;
@@ -589,6 +635,10 @@ function undo() {
 
     switch(action.type) {
         case 'spawn': ps = ps.filter(p => p.id !== action.particle.id); break;
+        case 'batchSpawn':
+            const idsToUndo = new Set(action.particles.map(p => p.id));
+            ps = ps.filter(p => !idsToUndo.has(p.id));
+            break;
         case 'delete': ps.push(action.particle); break;
         case 'edit': case 'addVelocity': case 'anchor':
             let p_undo = ps.find(p => p.id === action.before.id);
@@ -613,6 +663,13 @@ function redo() {
 
     switch(action.type) {
         case 'spawn': ps.push(action.particle); break;
+        case 'batchSpawn':
+             action.particles.forEach(p_data => {
+                const newP = new P(0,0);
+                Object.assign(newP, p_data);
+                ps.push(newP);
+             });
+            break;
         case 'delete': ps = ps.filter(p => p.id !== action.particle.id); break;
         case 'edit': case 'addVelocity': case 'anchor':
             let p_redo = ps.find(p => p.id === action.after.id);
@@ -816,17 +873,23 @@ function updateBarycenters() {
         let totalMass = 0;
         let comX = 0;
         let comY = 0;
+        let comVX = 0;
+        let comVY = 0;
 
         for (const connectedP of connectedParticles) {
             totalMass += connectedP.m;
             comX += connectedP.m * connectedP.x;
             comY += connectedP.m * connectedP.y;
+            comVX += connectedP.m * connectedP.vx;
+            comVY += connectedP.m * connectedP.vy;
         }
 
         if (totalMass > 0) {
             p.m = totalMass;
             p.x = comX / totalMass;
             p.y = comY / totalMass;
+            p.vx = comVX / totalMass;
+            p.vy = comVY / totalMass;
         } else {
             p.merged = true;
         }
@@ -863,7 +926,12 @@ function step(){
         updateBarycenters();
 
         for(const p of ps){
-            if (p.anchored || p.isBarycenter) continue;
+            if (p.anchored) continue;
+             if (p.isBarycenter) {
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                continue;
+            }
             p.x += p.vx * dt;
             p.y += p.vy * dt;
             if(isNaN(p.x)||isNaN(p.y)){ p.x=0; p.y=0; p.vx=p.vy=0; }
@@ -1038,7 +1106,7 @@ function draw(){
 
     // Real-time UI state updates
     const autoOrbitBtn = $('autoOrbitBtn');
-    const autoOrbitEligible = trackedParticle && !trackedParticle.isBarycenter && trackedParticle.m > 0;
+    const autoOrbitEligible = trackedParticle && trackedParticle.m > 0;
     if (autoOrbitEligible) {
         autoOrbitBtn.classList.remove('disabled');
     } else {
@@ -1049,6 +1117,13 @@ function draw(){
         }
     }
     
+    const saveCustomSystemBtn = $('saveCustomSystemBtn');
+    if (!trackedParticle) {
+        saveCustomSystemBtn.classList.add('disabled');
+    } else {
+        saveCustomSystemBtn.classList.remove('disabled');
+    }
+
     if (trackedParticle && !ps.find(p => p.id === trackedParticle.id)) {
         setTrackedParticle(null);
     }
@@ -1057,6 +1132,27 @@ function draw(){
     ctx.fillStyle='#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
     if(trackedParticle) { viewX = trackedParticle.x; viewY = trackedParticle.y; }
     applyView();
+
+    // Hologram Preview
+    if (hologramActive && hologramSystem) {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        const w_center = screenToWorld(cx, cy);
+        
+        hologramSystem.data.bodies.forEach(bodyData => {
+            const worldX = w_center.x + bodyData.relX;
+            const worldY = w_center.y + bodyData.relY;
+            const r = Math.sqrt(bodyData.m);
+            const hue = (Math.log10(bodyData.m) * 180) % 360;
+            const color = bodyData.customColor || `hsl(${hue}, 90%, 65%)`;
+
+            ctx.beginPath();
+            ctx.arc(worldX, worldY, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+        ctx.restore();
+    }
 
     ctx.save();
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -1228,6 +1324,24 @@ function draw(){
             ctx.setLineDash([]);
         }
     }
+
+    if (saveInProgress) {
+        $('save-instruction').textContent = 'Put a Bounding Box Around Your Custom Celestial Body';
+        $('save-instruction').style.display = 'block';
+        const box = selectionBox.screen;
+        if(box) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+            ctx.fillRect(box.x, box.y, box.w, box.h);
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(box.x, box.y, box.w, box.h);
+            ctx.setLineDash([]);
+        }
+    } else {
+        $('save-instruction').style.display = 'none';
+    }
+
     ctx.restore();
 }
 function loop(){ 
@@ -1243,7 +1357,7 @@ function loop(){
         }
     }
 
-    if (dragging && orbitPredictionEnabled) {
+    if (dragging && orbitPredictionEnabled && !hologramActive) {
         const w = screenToWorld(sx, sy);
         let vx = (sx - cx) * 0.5 * THROW_MULT / zoom;
         let vy = (sy - cy) * 0.5 * THROW_MULT / zoom;
@@ -1459,8 +1573,24 @@ function deactivateAllTools(except = null) {
     if (except !== 'barycenter') { barycenterMode = false; $('barycenterBtn').classList.remove('active'); barycenterBoxDrawing = false; selectionBox = {world:null, screen:null}; selectedParticles.clear(); }
     if (except !== 'saveLoad') { hideSaveLoadPanel(); }
     if (except !== 'presets') { hidePresetsPanel(); }
-    if (except !== 'autoOrbit') { autoOrbitMode = false; $('autoOrbitBtn').classList.remove('active'); }
+    
+    // Allow autoOrbit and customBodies to be active together
+    const isActivatingAutoOrbit = (except === 'autoOrbit');
+    const isActivatingCustomBodies = (except === 'customBodies');
+
+    if (!isActivatingAutoOrbit && !isActivatingCustomBodies) {
+        autoOrbitMode = false;
+        $('autoOrbitBtn').classList.remove('active');
+        
+        customBodiesMode = false;
+        $('customBodiesBtn').classList.remove('active');
+        hideCustomBodiesPanel();
+        saveInProgress = false;
+        hologramSystem = null;
+        hologramActive = false;
+    }
 }
+
 
 function clearAllVisualAids() {
     ps.forEach(p => p.trail = []);
@@ -1515,11 +1645,9 @@ $('anchorBtn').onclick = (e) => {
 $('autoOrbitBtn').onclick = (e) => {
     if (e.target.classList.contains('disabled')) return;
     autoOrbitMode = !autoOrbitMode;
+    e.target.classList.toggle('active', autoOrbitMode);
     if (autoOrbitMode) {
         deactivateAllTools('autoOrbit');
-        e.target.classList.add('active');
-    } else {
-        e.target.classList.remove('active');
     }
 };
 $('trailsBtn').onclick = (e) => {
@@ -1573,7 +1701,7 @@ function showEditPanel(p) {
     currentlyEditing = p;
     const panel = $('edit-panel');
     $('edit-id').value = p.id;
-    $('edit-name').value = p.name || ("Body " + p.id);
+    $('edit-name').value = p.name || '';
     $('edit-mass').value = p.m;
     $('edit-mass').disabled = p.isBarycenter;
     $('edit-color').value = p.customColor || '#ffffff';
@@ -1633,7 +1761,7 @@ document.addEventListener('mouseup', () => { isDraggingPanel = false; });
 /* ---------- Save, Load, and Preset Logic ---------- */
 function loadSimulationData(data) {
     try {
-        if (data.version !== "1.0") {
+        if (!data.version || !data.version.startsWith("1.0")) {
             throw new Error(`Incompatible version. Expected "1.0", got "${data.version}".`);
         }
         if (!data.sliders || !data.particles || !data.settings) {
@@ -1653,12 +1781,11 @@ function loadSimulationData(data) {
         // Restore Particles
         let maxId = 0;
         ps = data.particles.map(p_data => {
-            const newP = new P(0,0); // Create dummy to get new ID, then overwrite
+            const newP = new P(0,0);
             Object.assign(newP, p_data);
             newP.r = Math.sqrt(newP.m); // Recalculate radius
             if (p_data.id > maxId) maxId = p_data.id;
             
-            // Sync bodyNameCounter with loaded data to avoid name collisions
             if (newP.name && newP.name.startsWith("Body ")) {
                 const num = parseInt(newP.name.substring(5));
                 if (!isNaN(num) && num >= bodyNameCounter) {
@@ -1716,7 +1843,7 @@ $('saveSimBtn').onclick = () => {
         sliders: { gravity: G, gravityMult: GM, timeSpeed: TS, spawnMass: SPAWN_MASS, throwSpeedMult: THROW_MULT, pathLength: PATH_LENGTH_MULTIPLIER },
         particles: ps.map(p => ({
             id: p.id, name: p.name, x: p.x, y: p.y, vx: p.vx, vy: p.vy, m: p.m, customColor: p.customColor, anchored: p.anchored,
-            isBarycenter: p.isBarycenter, connectedIds: p.connectedIds, visible: p.visible
+            isBarycenter: p.isBarycenter, connectedIds: p.isBarycenter ? p.connectedIds : undefined, visible: p.visible
         })),
         settings: { trailsEnabled, relativeTrailsEnabled, orbitPredictionEnabled, isPaused },
         trackedParticleId: trackedParticle?.id || null, view: { zoom, viewX, viewY }
@@ -1742,8 +1869,10 @@ $('loadSimBtn').onclick = () => {
     if (!file) { alert('Please choose a file to load.'); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
-        const data = JSON.parse(e.target.result);
-        if (loadSimulationData(data)) { hideSaveLoadPanel(); }
+        try {
+            const data = JSON.parse(e.target.result);
+            if (loadSimulationData(data)) { hideSaveLoadPanel(); }
+        } catch (error) { alert("Failed to parse JSON file."); }
     };
     reader.onerror = () => alert('Error reading file.');
     reader.readAsText(file);
@@ -1767,6 +1896,98 @@ $('presetsBtn').onclick = (e) => {
 };
 $('closePresetsBtn').onclick = hidePresetsPanel;
 
+/* ---------- Custom Bodies Tool ---------- */
+const customBodiesPanel = $('custom-bodies-panel');
+$('customBodiesBtn').onclick = (e) => {
+    customBodiesMode = !customBodiesMode;
+    e.target.classList.toggle('active', customBodiesMode);
+    if (customBodiesMode) {
+        deactivateAllTools('customBodies');
+        showCustomBodiesPanel();
+    } else {
+        hideCustomBodiesPanel();
+        hologramActive = false;
+        hologramSystem = null;
+    }
+};
+function showCustomBodiesPanel() {
+    customBodiesPanel.style.display = 'flex';
+    customBodiesPanel.style.left = `${(window.innerWidth - customBodiesPanel.offsetWidth) / 2}px`;
+    customBodiesPanel.style.top = `${(window.innerHeight - customBodiesPanel.offsetHeight) / 2}px`;
+}
+function hideCustomBodiesPanel() {
+    customBodiesPanel.style.display = 'none';
+}
+$('closeCustomBodiesBtn').onclick = () => {
+    customBodiesMode = false;
+    $('customBodiesBtn').classList.remove('active');
+    hideCustomBodiesPanel();
+    hologramActive = false;
+    hologramSystem = null;
+};
+$('saveCustomSystemBtn').onclick = () => {
+    if (!trackedParticle) {
+        alert("Please track a planet or barycenter to save a relative snapshot.");
+        return;
+    }
+    saveInProgress = true;
+    selectionBox = { world: null, screen: { x: 0, y: 0, w: 0, h: 0 } };
+    hideCustomBodiesPanel();
+};
+$('loadCustomSystemBtn').onclick = () => $('loadCustomSystemInput').click();
+$('loadCustomSystemInput').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            if (data.version === "1.0-custom" && Array.isArray(data.bodies)) {
+                loadedSystems.push({ name: file.name, data: data });
+                updateLoadedSystemsList();
+            } else {
+                alert("Invalid custom system file format.");
+            }
+        } catch (error) { alert("Failed to parse JSON file."); }
+    };
+    reader.onerror = () => alert('Error reading file.');
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input to allow loading same file again
+};
+function updateLoadedSystemsList() {
+    const container = $('loaded-systems-list');
+    container.innerHTML = '';
+    loadedSystems.forEach((system, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'loaded-system-item';
+        
+        const nameBtn = document.createElement('button');
+        nameBtn.className = 'system-name-btn';
+        nameBtn.textContent = system.name;
+        nameBtn.onclick = () => {
+            hologramSystem = system;
+            hologramActive = true;
+            hideCustomBodiesPanel();
+        };
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit-name-btn edit-btn';
+        editBtn.innerHTML = '✎';
+        editBtn.onclick = () => {
+            const newName = prompt("Enter new name for the system:", system.name);
+            if (newName && newName.trim() !== '') {
+                loadedSystems[index].name = newName.trim();
+                updateLoadedSystemsList();
+            }
+        };
+
+        itemDiv.appendChild(nameBtn);
+        itemDiv.appendChild(editBtn);
+        container.appendChild(itemDiv);
+    });
+}
+
+
 // Draggable Modals Logic (Combined for larger panels)
 let draggedPanel = null, isDraggingModal = false;
 function makePanelDraggable(panel, header) {
@@ -1779,6 +2000,7 @@ function makePanelDraggable(panel, header) {
 }
 makePanelDraggable($('save-load-panel'), $('save-load-panel-header'));
 makePanelDraggable($('presets-panel'), $('presets-panel-header'));
+makePanelDraggable($('custom-bodies-panel'), $('custom-bodies-panel-header'));
 document.addEventListener('mousemove', e => {
     if (!isDraggingModal || !draggedPanel) return;
     let newX = e.clientX - panelOffsetX; let newY = e.clientY - panelOffsetY;
@@ -1856,7 +2078,7 @@ canvas.addEventListener('mousedown', e => {
         return;
     }
     
-    if (autoOrbitMode) { return; }
+    if (autoOrbitMode && !hologramActive) { return; }
 
     if (planetTrackerMode && clickedParticle) { setTrackedParticle(clickedParticle); return; }
     if (planetEditorMode && clickedParticle) { showEditPanel(clickedParticle, e); return; }
@@ -1895,8 +2117,13 @@ canvas.addEventListener('mousedown', e => {
         }
         return;
     }
+
+    if (saveInProgress) {
+        selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+        return;
+    }
     
-    if (planetEditorMode) return;
+    if (planetEditorMode || (customBodiesMode && !hologramActive)) return;
 
     dragging = true;
     cx = e.clientX;
@@ -1916,6 +2143,9 @@ canvas.addEventListener('mousemove', e => {
         } else if (barycenterMode && barycenterBoxDrawing) {
             selectionBox.screen.w = e.clientX - selectionBox.screen.x;
             selectionBox.screen.h = e.clientY - selectionBox.screen.y;
+        } else if (saveInProgress) {
+            selectionBox.screen.w = e.clientX - sx;
+            selectionBox.screen.h = e.clientY - sy;
         }
     }
 });
@@ -1923,7 +2153,7 @@ canvas.addEventListener('mouseup', e => {
     if (e.button === 2) { isPanning = false; return; }
     const isSimpleClick = Math.hypot(e.clientX - sx, e.clientY - sy) < 5;
     
-    if (autoOrbitMode && trackedParticle && !trackedParticle.isBarycenter && !isPanning) {
+    if (autoOrbitMode && trackedParticle && !hologramActive && !isPanning) {
         const w = screenToWorld(e.clientX, e.clientY);
         const spawnRadius = Math.sqrt(SPAWN_MASS);
         const r = Math.hypot(w.x - trackedParticle.x, w.y - trackedParticle.y);
@@ -1942,6 +2172,98 @@ canvas.addEventListener('mouseup', e => {
         newParticle.name = "Body " + bodyNameCounter++;
         ps.push(newParticle);
         recordHistory({ type: 'spawn', particle: cloneParticle(newParticle) });
+        return;
+    }
+
+    if (hologramActive && hologramSystem) {
+        const w_center = screenToWorld(e.clientX, e.clientY);
+        let base_vx = 0, base_vy = 0;
+
+        const autoOrbitEligible = autoOrbitMode && trackedParticle;
+        if (autoOrbitEligible) {
+            let totalSystemMass = hologramSystem.data.bodies.reduce((sum, body) => sum + body.m, 0);
+            const r = Math.hypot(w_center.x - trackedParticle.x, w_center.y - trackedParticle.y);
+            
+            if (r > (trackedParticle.r || 0)) { 
+                const EG = G * GM;
+                const v = Math.sqrt((EG * (trackedParticle.m + totalSystemMass)) / r);
+                const angle = Math.atan2(w_center.y - trackedParticle.y, w_center.x - trackedParticle.x);
+                const orbital_vx = -v * Math.sin(angle);
+                const orbital_vy = v * Math.cos(angle);
+                base_vx += orbital_vx;
+                base_vy += orbital_vy;
+            }
+        } else if (dragging) {
+            base_vx += (sx - e.clientX) * 0.5 * THROW_MULT / zoom;
+            base_vy += (sy - e.clientY) * 0.5 * THROW_MULT / zoom;
+        }
+        
+        if (trackedParticle) {
+            base_vx += trackedParticle.vx;
+            base_vy += trackedParticle.vy;
+        }
+        
+        const newParticles = [];
+        hologramSystem.data.bodies.forEach(bodyData => {
+            const worldX = w_center.x + bodyData.relX;
+            const worldY = w_center.y + bodyData.relY;
+            const worldVX = bodyData.relVX + base_vx;
+            const worldVY = bodyData.relVY + base_vy;
+
+            const p = new P(worldX, worldY, bodyData.m, worldVX, worldVY);
+            p.name = bodyData.name || `Body ${p.id}`;
+            p.customColor = bodyData.customColor;
+            p.anchored = bodyData.anchored;
+            ps.push(p);
+            newParticles.push(cloneParticle(p));
+        });
+        
+        if (newParticles.length > 0) {
+            recordHistory({ type: 'batchSpawn', particles: newParticles });
+        }
+        
+        dragging = false; 
+        return; 
+    }
+
+    if (saveInProgress) {
+        const r = { l: Math.min(sx, cx), r: Math.max(sx, cx), t: Math.min(sy, cy), b: Math.max(sy, cy) };
+        const w_tl = screenToWorld(r.l, r.t);
+        const w_br = screenToWorld(r.r, r.b);
+        selectionBox.world = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
+
+        const particlesInBox = ps.filter(p => !p.isBarycenter && isPointInWorldBox(p.x, p.y, selectionBox.world));
+        
+        if (particlesInBox.length > 0) {
+            const snapshotBodies = particlesInBox.map((p) => {
+                return {
+                    relX: p.x - trackedParticle.x, relY: p.y - trackedParticle.y,
+                    relVX: p.vx - trackedParticle.vx, relVY: p.vy - trackedParticle.vy,
+                    m: p.m, name: p.name, customColor: p.customColor, anchored: p.anchored
+                };
+            });
+
+            const snapshot = {
+                version: "1.0-custom",
+                bodies: snapshotBodies
+            };
+            const jsonString = JSON.stringify(snapshot, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+            a.download = `custom_system_${timestamp}.json`;
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            loadedSystems.push({ name: `Custom System ${customBodyCounter++}`, data: snapshot });
+            updateLoadedSystemsList();
+        }
+        
+        saveInProgress = false;
+        selectionBox = { world: null, screen: null };
+        showCustomBodiesPanel();
         return;
     }
 
@@ -2049,28 +2371,36 @@ window.addEventListener('keydown', e => {
     if(e.code === 'Space') {
         e.preventDefault(); isPaused = !isPaused; $('pauseButton').textContent = isPaused ? 'Resume' : 'Pause';
     }
-    if (e.key === 'Enter' && barycenterMode) {
+    if (e.key === 'Enter') {
         e.preventDefault();
-        if (selectedParticles.size >= 2) {
-            let totalMass = 0, comX = 0, comY = 0;
-            const ids = [];
-            selectedParticles.forEach(p => {
-                totalMass += p.m;
-                comX += p.m * p.x;
-                comY += p.m * p.y;
-                ids.push(p.id);
-            });
-            const barycenter = new P(comX / totalMass, comY / totalMass, totalMass);
-            barycenter.isBarycenter = true;
-            barycenter.connectedIds = ids;
-            barycenter.name = "Body " + bodyNameCounter++;
-            ps.push(barycenter);
-            recordHistory({ type: 'spawn', particle: cloneParticle(barycenter) });
+        if (barycenterMode) {
+            if (selectedParticles.size >= 2) {
+                let totalMass = 0, comX = 0, comY = 0, comVX = 0, comVY = 0;
+                const ids = [];
+                selectedParticles.forEach(p => {
+                    totalMass += p.m;
+                    comX += p.m * p.x;
+                    comY += p.m * p.y;
+                    comVX += p.m * p.vx;
+                    comVY += p.m * p.vy;
+                    ids.push(p.id);
+                });
+                const barycenter = new P(comX / totalMass, comY / totalMass, totalMass, comVX / totalMass, comVY / totalMass);
+                barycenter.isBarycenter = true;
+                barycenter.connectedIds = ids;
+                barycenter.name = "Barycenter " + bodyNameCounter++;
+                ps.push(barycenter);
+                recordHistory({ type: 'spawn', particle: cloneParticle(barycenter) });
+            }
+            selectedParticles.clear();
+        } else if (hologramActive) {
+            hologramActive = false;
+            hologramSystem = null;
+            showCustomBodiesPanel();
         }
-        selectedParticles.clear();
     }
     if (e.key === 'Escape') {
-        hideEditPanel(); hideSaveLoadPanel(); hidePresetsPanel();
+        hideEditPanel(); hideSaveLoadPanel(); hidePresetsPanel(); hideCustomBodiesPanel();
         deactivateAllTools();
     }
 });
@@ -2102,7 +2432,8 @@ function setupTooltips() {
         editorBtn: "Click a planet to edit its mass, name, and color.",
         barycenterBtn: "Select multiple planets (Ctrl+Click or box) and press Enter to create their center of mass.",
         saveLoadBtn: "Save your simulation to a file or load a previous save.",
-        presetsBtn: "Load pre-made solar systems and exoplanet configurations."
+        presetsBtn: "Load pre-made solar systems and exoplanet configurations.",
+        customBodiesBtn: "Save/load custom systems as JSON; draw bounding box to snapshot relative to tracked object, load as holographic stamp for spawning."
     };
 
     document.querySelectorAll('#utilitiesToolbar .tool-btn').forEach(btn => {
@@ -2110,9 +2441,7 @@ function setupTooltips() {
         if (!description) return;
 
         btn.addEventListener('mouseenter', () => {
-            if (btn.classList.contains('disabled') && btn.id !== 'autoOrbitBtn') {
-                return;
-            }
+            if (btn.classList.contains('disabled')) return;
             tooltip.textContent = description;
             const rect = btn.getBoundingClientRect();
             
@@ -2125,15 +2454,14 @@ function setupTooltips() {
             tooltip.style.transform = transform;
             
             // Re-check position after applying transform to get rendered position
-            requestAnimationFrame(() => {
-                const tooltipRect = tooltip.getBoundingClientRect();
-                if (tooltipRect.top < 5) {
-                    tooltip.classList.add('below');
-                    tooltip.style.top = `${rect.bottom + 10}px`;
-                    tooltip.style.transform = 'translateX(-50%) scale(0.95)';
-                }
-                tooltip.classList.add('show');
-            });
+            const tooltipRect = tooltip.getBoundingClientRect();
+            if (tooltipRect.top < 5) {
+                tooltip.classList.add('below');
+                tooltip.style.top = `${rect.bottom + 10}px`;
+                tooltip.style.transform = 'translateX(-50%) scale(0.95)';
+            }
+            
+            tooltip.classList.add('show');
         });
 
         btn.addEventListener('mouseleave', () => {
@@ -2151,5 +2479,6 @@ setupTooltips();
 resetPs();
 loop();
 </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
