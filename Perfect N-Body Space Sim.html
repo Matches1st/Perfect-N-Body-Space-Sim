@@ -1014,6 +1014,16 @@ function draw(){
     ctx.save();
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
+    if (barycenterMode && selectedParticles.size > 0) {
+        ctx.strokeStyle = '#800080'; // Purple
+        ctx.lineWidth = 2 / zoom;
+        for (const p of selectedParticles) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r + 2 / zoom, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+    
     if (autoOrbitMode && autoOrbitEligible) {
         const mouseWorld = screenToWorld(cx, cy);
         const r = Math.hypot(mouseWorld.x - trackedParticle.x, mouseWorld.y - trackedParticle.y);
@@ -1178,6 +1188,14 @@ function loop(){
         step();
     }
     
+    // Cleanup selectedParticles if a particle was deleted/merged
+    if (barycenterMode && selectedParticles.size > 0) {
+        const currentParticles = Array.from(selectedParticles).filter(p => ps.includes(p));
+        if (currentParticles.length !== selectedParticles.size) {
+            selectedParticles = new Set(currentParticles);
+        }
+    }
+
     if (dragging && orbitPredictionEnabled) {
         const w = screenToWorld(sx, sy);
         let vx = (sx - cx) * 0.5 * THROW_MULT / zoom;
@@ -1391,9 +1409,9 @@ $('utilitiesButton').onclick = () => {
 function deactivateAllTools(except = null) {
     if (except !== 'tracker') { planetTrackerMode = false; $('trackerBtn').classList.remove('active'); }
     if (except !== 'editor') { planetEditorMode = false; $('editorBtn').classList.remove('active'); hideEditPanel(); }
-    if (except !== 'addVel') { addVelocityMode = false; $('addVelBtn').classList.remove('active'); addVelToolState = 'idle'; selectedParticles.clear(); selectionBox = {world: null, screen: null}; addVelTarget = null; }
+    if (except !== 'addVel') { addVelocityMode = false; $('addVelBtn').classList.remove('active'); addVelToolState = 'idle'; selectedParticles.clear(); }
     if (except !== 'anchor') { anchorMode = false; $('anchorBtn').classList.remove('active'); }
-    if (except !== 'barycenter') { barycenterMode = false; $('barycenterBtn').classList.remove('active'); barycenterBoxDrawing = false; selectionBox = {world:null, screen:null}; }
+    if (except !== 'barycenter') { barycenterMode = false; $('barycenterBtn').classList.remove('active'); barycenterBoxDrawing = false; selectionBox = {world:null, screen:null}; selectedParticles.clear(); }
     if (except !== 'saveLoad') { hideSaveLoadPanel(); }
     if (except !== 'presets') { hidePresetsPanel(); }
     if (except !== 'autoOrbit') { autoOrbitMode = false; $('autoOrbitBtn').classList.remove('active'); }
@@ -1500,7 +1518,7 @@ $('editorBtn').onclick = (e) => {
 };
 $('barycenterBtn').onclick = (e) => {
     barycenterMode = !barycenterMode;
-    if(barycenterMode){ deactivateAllTools('barycenter'); e.target.classList.add('active'); } 
+    if (barycenterMode) { deactivateAllTools('barycenter'); e.target.classList.add('active'); }
     else { e.target.classList.remove('active'); }
 };
 
@@ -1764,6 +1782,7 @@ function isPointInRect(px, py, rect) {
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
     const clickedParticle = getParticleAtScreenPos(e.clientX, e.clientY);
+    sx = e.clientX; sy = e.clientY;
     
     if (e.button !== 0) {
         if (trackedParticle) { setTrackedParticle(null); }
@@ -1771,11 +1790,19 @@ canvas.addEventListener('mousedown', e => {
         lastX = e.clientX; lastY = e.clientY;
         return;
     }
-    
-    if (autoOrbitMode) {
-        // In auto-orbit mode, we only spawn on mouseup, so mousedown does nothing to prevent dragging.
+
+    if (barycenterMode && e.ctrlKey) {
+        if (clickedParticle && !clickedParticle.isBarycenter) {
+            if (selectedParticles.has(clickedParticle)) {
+                selectedParticles.delete(clickedParticle);
+            } else {
+                selectedParticles.add(clickedParticle);
+            }
+        }
         return;
     }
+    
+    if (autoOrbitMode) { return; }
 
     if (planetTrackerMode && clickedParticle) { setTrackedParticle(clickedParticle); return; }
     if (planetEditorMode && clickedParticle) { showEditPanel(clickedParticle, e); return; }
@@ -1787,18 +1814,14 @@ canvas.addEventListener('mousedown', e => {
                 lockedBoxDragStart = { x: e.clientX, y: e.clientY };
                 return;
             } else {
-                addVelToolState = 'idle';
-                selectedParticles.clear();
-                selectionBox.screen = null;
+                addVelToolState = 'idle'; selectedParticles.clear(); selectionBox.screen = null;
             }
         }
         
         if (clickedParticle) {
-            addVelTarget = clickedParticle;
-            sx = cx = e.clientX; sy = cy = e.clientY;
+            addVelTarget = clickedParticle; cx = e.clientX; cy = e.clientY;
         } else {
-            addVelToolState = 'drawing';
-            selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+            addVelToolState = 'drawing'; selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
         }
         return;
     }
@@ -1814,8 +1837,7 @@ canvas.addEventListener('mousedown', e => {
     
     if (barycenterMode) {
         if (!clickedParticle) {
-            barycenterBoxDrawing = true;
-            selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+            barycenterBoxDrawing = true; selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
         }
         return;
     }
@@ -1823,8 +1845,8 @@ canvas.addEventListener('mousedown', e => {
     if (planetEditorMode) return;
 
     dragging = true;
-    sx = cx = e.clientX;
-    sy = cy = e.clientY;
+    cx = e.clientX;
+    cy = e.clientY;
 });
 
 canvas.addEventListener('mousemove', e => {
@@ -1845,29 +1867,47 @@ canvas.addEventListener('mousemove', e => {
 });
 canvas.addEventListener('mouseup', e => {
     if (e.button === 2) { isPanning = false; return; }
+    const isSimpleClick = Math.hypot(e.clientX - sx, e.clientY - sy) < 5;
     
     if (autoOrbitMode && trackedParticle && !trackedParticle.isBarycenter && !isPanning) {
         const w = screenToWorld(e.clientX, e.clientY);
         const spawnRadius = Math.sqrt(SPAWN_MASS);
         const r = Math.hypot(w.x - trackedParticle.x, w.y - trackedParticle.y);
         
-        if (r < trackedParticle.r + spawnRadius) return; // Prevent spawning inside
+        if (r < trackedParticle.r + spawnRadius) return;
         
         const EG = G * GM;
-        // Correct velocity for a stable two-body circular orbit is sqrt(G * (M1+M2) / r)
-        const v = Math.sqrt(EG * (trackedParticle.m + SPAWN_MASS) / r);
+        const totalMass = trackedParticle.m + SPAWN_MASS;
+        const v = Math.sqrt((EG * totalMass) / r); // Corrected orbital speed for two-body problem
         const angle = Math.atan2(w.y - trackedParticle.y, w.x - trackedParticle.x);
         
-        let vx = -v * Math.sin(angle); // Tangential velocity component
-        let vy = v * Math.cos(angle);
-        
-        vx += trackedParticle.vx; // Add parent body's velocity
-        vy += trackedParticle.vy;
+        let vx = -v * Math.sin(angle) + trackedParticle.vx;
+        let vy = v * Math.cos(angle) + trackedParticle.vy;
         
         const newParticle = new P(w.x, w.y, SPAWN_MASS, vx, vy);
         ps.push(newParticle);
         recordHistory({ type: 'spawn', particle: cloneParticle(newParticle) });
-        return; // Prevent fall-through to other modes
+        return;
+    }
+
+    if (barycenterMode) {
+        if (barycenterBoxDrawing) {
+            barycenterBoxDrawing = false;
+            const r = { l: Math.min(sx, cx), r: Math.max(sx, cx), t: Math.min(sy, cy), b: Math.max(sy, cy) };
+            const w_tl = screenToWorld(r.l, r.t);
+            const w_br = screenToWorld(r.r, r.b);
+            selectionBox.world = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
+
+            ps.forEach(p => {
+                if (!p.isBarycenter && isPointInWorldBox(p.x, p.y, selectionBox.world)) {
+                    selectedParticles.add(p);
+                }
+            });
+            selectionBox = { world: null, screen: null };
+        } else if (isSimpleClick && !getParticleAtScreenPos(e.clientX, e.clientY)) {
+             selectedParticles.clear();
+        }
+        return;
     }
 
     if (addVelocityMode) {
@@ -1890,13 +1930,10 @@ canvas.addEventListener('mouseup', e => {
             selectionBox.screen = {x: r.l, y: r.t, w: r.r - r.l, h: r.b - r.t};
 
             if (selectionBox.screen.w < 5 && selectionBox.screen.h < 5) {
-                addVelToolState = 'idle';
-                selectionBox.screen = null;
-                return;
+                addVelToolState = 'idle'; selectionBox.screen = null; return;
             }
 
-            const w_tl = screenToWorld(r.l, r.t);
-            const w_br = screenToWorld(r.r, r.b);
+            const w_tl = screenToWorld(r.l, r.t); const w_br = screenToWorld(r.r, r.b);
             const world_box_selection = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
             
             selectedParticles.clear();
@@ -1906,12 +1943,8 @@ canvas.addEventListener('mouseup', e => {
                 }
             });
 
-            if (selectedParticles.size > 0) {
-                addVelToolState = 'locked';
-            } else {
-                addVelToolState = 'idle';
-                selectionBox.screen = null;
-            }
+            if (selectedParticles.size > 0) { addVelToolState = 'locked'; } 
+            else { addVelToolState = 'idle'; selectionBox.screen = null; }
 
         } else if (addVelToolState === 'applyingVelocity') {
             const screen_dx = e.clientX - lockedBoxDragStart.x;
@@ -1934,35 +1967,7 @@ canvas.addEventListener('mouseup', e => {
         return;
     }
     
-    if (barycenterMode && barycenterBoxDrawing) {
-        barycenterBoxDrawing = false;
-        const r = { l: Math.min(selectionBox.screen.x, selectionBox.screen.x + selectionBox.screen.w),
-                    r: Math.max(selectionBox.screen.x, selectionBox.screen.x + selectionBox.screen.w),
-                    t: Math.min(selectionBox.screen.y, selectionBox.screen.y + selectionBox.screen.h),
-                    b: Math.max(selectionBox.screen.y, selectionBox.screen.y + selectionBox.screen.h) };
-        const w_tl = screenToWorld(r.l, r.t);
-        const w_br = screenToWorld(r.r, r.b);
-        selectionBox.world = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
-
-        const containedParticles = ps.filter(p => !p.isBarycenter && isPointInWorldBox(p.x, p.y, selectionBox.world));
-        
-        if (containedParticles.length >= 2) {
-            let totalMass = 0, comX = 0, comY = 0;
-            const ids = containedParticles.map(p => {
-                totalMass += p.m;
-                comX += p.m * p.x;
-                comY += p.m * p.y;
-                return p.id;
-            });
-            const barycenter = new P(comX / totalMass, comY / totalMass, totalMass);
-            barycenter.isBarycenter = true;
-            barycenter.connectedIds = ids;
-            barycenter.name = `Barycenter #${barycenter.id}`;
-            ps.push(barycenter);
-            recordHistory({ type: 'spawn', particle: cloneParticle(barycenter) });
-        }
-        selectionBox = { world: null, screen: null };
-    } else if (dragging) {
+    if (dragging) {
         dragging = false;
         spawnPreviewPath = [];
         const w = screenToWorld(sx, sy);
@@ -1988,12 +1993,29 @@ window.addEventListener('keydown', e => {
     if(e.code === 'Space') {
         e.preventDefault(); isPaused = !isPaused; $('pauseButton').textContent = isPaused ? 'Resume' : 'Pause';
     }
+    if (e.key === 'Enter' && barycenterMode) {
+        e.preventDefault();
+        if (selectedParticles.size >= 2) {
+            let totalMass = 0, comX = 0, comY = 0;
+            const ids = [];
+            selectedParticles.forEach(p => {
+                totalMass += p.m;
+                comX += p.m * p.x;
+                comY += p.m * p.y;
+                ids.push(p.id);
+            });
+            const barycenter = new P(comX / totalMass, comY / totalMass, totalMass);
+            barycenter.isBarycenter = true;
+            barycenter.connectedIds = ids;
+            barycenter.name = `Barycenter #${barycenter.id}`;
+            ps.push(barycenter);
+            recordHistory({ type: 'spawn', particle: cloneParticle(barycenter) });
+        }
+        selectedParticles.clear();
+    }
     if (e.key === 'Escape') {
         hideEditPanel(); hideSaveLoadPanel(); hidePresetsPanel();
-        if (autoOrbitMode) {
-            autoOrbitMode = false;
-            $('autoOrbitBtn').classList.remove('active');
-        }
+        deactivateAllTools();
     }
 });
 
