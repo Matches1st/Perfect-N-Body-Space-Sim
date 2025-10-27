@@ -367,6 +367,52 @@
     
     .file-input-wrapper { margin-bottom: 20px; }
     #fileNameSpan { display: block; margin-top: 15px; padding: 0 10px; font-style: italic; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+
+    /* --- Tooltip --- */
+    .tooltip {
+        position: absolute;
+        background: rgba(30, 34, 42, 0.95);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.4;
+        max-width: 200px;
+        text-align: center;
+        white-space: normal;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        transform: translateX(-50%) scale(0.95);
+    }
+    .tooltip.show {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+    .tooltip.below {
+        transform: translateX(-50%) scale(0.95);
+    }
+    .tooltip.below.show {
+        transform: translateX(-50%) scale(1);
+    }
+    .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: rgba(30, 34, 42, 0.95) transparent transparent transparent;
+    }
+    .tooltip.below::after {
+        top: auto;
+        bottom: 100%;
+        border-color: transparent transparent rgba(30, 34, 42, 0.95) transparent;
+    }
 </style>
 </head>
 <body>
@@ -1345,7 +1391,7 @@ function updateObjectList() {
                 <div class="object-item ${isTrackedClass}" data-id="${p.id}">
                     <div class="color-swatch" style="border: 2px dashed rgba(255,255,255,0.5); background: none; box-sizing: border-box;"></div>
                     <div class="info">
-                        <div><b>${p.name || `Barycenter #${p.id}`}</b></div>
+                        <div><b>${p.name || `Body #${p.id}`}</b></div>
                         <div>Total Mass: ${p.m.toFixed(1)}</div>
                         <div>Bodies: ${p.connectedIds.length}</div>
                     </div>
@@ -1546,7 +1592,7 @@ $('saveEditBtn').onclick = () => {
     if(p) {
         const beforeState = { id: p.id, name: p.name, m: p.m, r: p.r, customColor: p.customColor };
         
-        p.name = $('edit-name').value || null;
+        p.name = $('edit-name').value || ("Body " + p.id);
         if (!p.isBarycenter) {
             p.m = Math.max(1, parseFloat($('edit-mass').value));
             p.r = Math.sqrt(p.m);
@@ -2039,8 +2085,65 @@ canvas.addEventListener('wheel', e => {
     viewY += worldBefore.y - worldAfter.y;
 });
 
+function setupTooltips() {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    document.body.appendChild(tooltip);
+
+    const TOOL_DESCRIPTIONS = {
+        trackerBtn: "Click a planet to center and follow it with the camera.",
+        addVelBtn: "Click and drag from a planet to apply velocity, or select multiple with a box.",
+        anchorBtn: "Click a planet to freeze it in place while preserving its gravity.",
+        autoOrbitBtn: "Spawn planets in perfect circular orbits around a tracked planet.",
+        trailsBtn: "Show trails behind moving planets. Incompatible with other trail/orbit modes.",
+        relTrailBtn: "Show trails relative to the tracked planet. Requires tracking a planet.",
+        orbitBtn: "Predict and display the future orbital paths of all planets.",
+        editorBtn: "Click a planet to edit its mass, name, and color.",
+        barycenterBtn: "Select multiple planets (Ctrl+Click or box) and press Enter to create their center of mass.",
+        saveLoadBtn: "Save your simulation to a file or load a previous save.",
+        presetsBtn: "Load pre-made solar systems and exoplanet configurations."
+    };
+
+    document.querySelectorAll('#utilitiesToolbar .tool-btn').forEach(btn => {
+        const description = TOOL_DESCRIPTIONS[btn.id];
+        if (!description) return;
+
+        btn.addEventListener('mouseenter', () => {
+            if (btn.classList.contains('disabled')) return;
+            tooltip.textContent = description;
+            const rect = btn.getBoundingClientRect();
+            
+            tooltip.classList.remove('below');
+            let top = rect.top - 10;
+            let transform = `translateX(-50%) translateY(-100%) scale(0.95)`;
+
+            tooltip.style.left = `${rect.left + rect.width / 2}px`;
+            tooltip.style.top = `${top}px`;
+            tooltip.style.transform = transform;
+            
+            // Re-check position after applying transform to get rendered position
+            const tooltipRect = tooltip.getBoundingClientRect();
+            if (tooltipRect.top < 5) {
+                tooltip.classList.add('below');
+                tooltip.style.top = `${rect.bottom + 10}px`;
+                tooltip.style.transform = 'translateX(-50%) scale(0.95)';
+            }
+            
+            tooltip.classList.add('show');
+        });
+
+        btn.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('show');
+        });
+    });
+    // Hide tooltip if toolbar itself is left
+    $('utilitiesToolbar').addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+}
+
+
 /* ---------- start ---------- */
 populatePresetsPanel();
+setupTooltips();
 resetPs();
 loop();
 </script>
