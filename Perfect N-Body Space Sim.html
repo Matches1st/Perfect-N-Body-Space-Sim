@@ -276,7 +276,7 @@
     .tool-btn.disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        pointer-events: none;
+        /* pointer-events: none; - REMOVED TO ALLOW HOVER */
     }
 
     /* --- Modal Panels (Edit, Save/Load, Presets) --- */
@@ -1573,7 +1573,7 @@ function showEditPanel(p) {
     currentlyEditing = p;
     const panel = $('edit-panel');
     $('edit-id').value = p.id;
-    $('edit-name').value = p.name || '';
+    $('edit-name').value = p.name || ("Body " + p.id);
     $('edit-mass').value = p.m;
     $('edit-mass').disabled = p.isBarycenter;
     $('edit-color').value = p.customColor || '#ffffff';
@@ -1653,11 +1653,12 @@ function loadSimulationData(data) {
         // Restore Particles
         let maxId = 0;
         ps = data.particles.map(p_data => {
-            const newP = new P(0,0);
+            const newP = new P(0,0); // Create dummy to get new ID, then overwrite
             Object.assign(newP, p_data);
             newP.r = Math.sqrt(newP.m); // Recalculate radius
             if (p_data.id > maxId) maxId = p_data.id;
             
+            // Sync bodyNameCounter with loaded data to avoid name collisions
             if (newP.name && newP.name.startsWith("Body ")) {
                 const num = parseInt(newP.name.substring(5));
                 if (!isNaN(num) && num >= bodyNameCounter) {
@@ -2109,7 +2110,9 @@ function setupTooltips() {
         if (!description) return;
 
         btn.addEventListener('mouseenter', () => {
-            if (btn.classList.contains('disabled')) return;
+            if (btn.classList.contains('disabled') && btn.id !== 'autoOrbitBtn') {
+                return;
+            }
             tooltip.textContent = description;
             const rect = btn.getBoundingClientRect();
             
@@ -2122,14 +2125,15 @@ function setupTooltips() {
             tooltip.style.transform = transform;
             
             // Re-check position after applying transform to get rendered position
-            const tooltipRect = tooltip.getBoundingClientRect();
-            if (tooltipRect.top < 5) {
-                tooltip.classList.add('below');
-                tooltip.style.top = `${rect.bottom + 10}px`;
-                tooltip.style.transform = 'translateX(-50%) scale(0.95)';
-            }
-            
-            tooltip.classList.add('show');
+            requestAnimationFrame(() => {
+                const tooltipRect = tooltip.getBoundingClientRect();
+                if (tooltipRect.top < 5) {
+                    tooltip.classList.add('below');
+                    tooltip.style.top = `${rect.bottom + 10}px`;
+                    tooltip.style.transform = 'translateX(-50%) scale(0.95)';
+                }
+                tooltip.classList.add('show');
+            });
         });
 
         btn.addEventListener('mouseleave', () => {
