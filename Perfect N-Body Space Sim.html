@@ -1066,10 +1066,6 @@ let G = DEFAULT_G, GM=DEFAULT_GM, TS=DEFAULT_TS;
 function step(){
     const dt=BASE_DT*TS/SUBST, EG=G*GM;
     
-    if(!trailsEnabled && !relativeTrailsEnabled) {
-        for(const p of ps) p.trail = [];
-    }
-    
     for(let s=0;s<SUBST;s++){
         const qt=buildQuadTree(ps);
         for(const p of ps){
@@ -1361,20 +1357,31 @@ function draw(){
         }
     }
 
-    const isDrawingTrails = trailsEnabled || (relativeTrailsEnabled && trackedParticle);
-    if (isDrawingTrails) {
+    if (trailsEnabled) { // Only check for trailsEnabled
         ctx.lineWidth = Math.max(0.5, 1.0 / zoom);
         for (const p of ps) {
             const trail = p.trail;
-            if (trail.length < 2 || p.isBarycenter || (relativeTrailsEnabled && p === trackedParticle)) continue;
-
-            const refX = relativeTrailsEnabled ? trackedParticle.x : 0;
-            const refY = relativeTrailsEnabled ? trackedParticle.y : 0;
+            if (trail.length < 2 || p.isBarycenter) continue;
             
             ctx.beginPath();
-            ctx.moveTo(refX + trail[0].x, refY + trail[0].y);
+            ctx.moveTo(trail[0].x, trail[0].y);
             for(let i = 1; i < trail.length; i++) {
-                ctx.lineTo(refX + trail[i].x, refY + trail[i].y);
+                ctx.lineTo(trail[i].x, trail[i].y);
+            }
+            ctx.strokeStyle = p.color();
+            ctx.stroke();
+        }
+    } else if (relativeTrailsEnabled && trackedParticle) {
+        ctx.lineWidth = Math.max(0.5, 1.0 / zoom);
+        for (const p of ps) {
+            if (p === trackedParticle) continue;
+            const trail = p.trail;
+            if (trail.length < 2 || p.isBarycenter) continue;
+            
+            ctx.beginPath();
+            ctx.moveTo(trackedParticle.x + trail[0].x, trackedParticle.y + trail[0].y);
+            for(let i = 1; i < trail.length; i++) {
+                ctx.lineTo(trackedParticle.x + trail[i].x, trackedParticle.y + trail[i].y);
             }
             ctx.strokeStyle = p.color();
             ctx.stroke();
@@ -1780,20 +1787,22 @@ function deactivateAllTools(except = null) {
 }
 
 
-function clearAllVisualAids() {
-    ps.forEach(p => p.trail = []);
+function clearAllVisualAids(exceptTrails = false) {
+    if (!exceptTrails) {
+        ps.forEach(p => p.trail = []);
+    }
     predictedPaths.clear();
     spawnPreviewPath = [];
 }
 
 function setTrackedParticle(newParticle) {
-    if (trackedParticle === newParticle) return; // No change, do nothing.
+    if (trackedParticle === newParticle) return;
 
-    // Selectively clear visual aids to preserve absolute trails on tracking changes.
+    // Only reset relative trails and predictions, not absolute trails
     predictedPaths.clear();
     spawnPreviewPath = [];
     if (relativeTrailsEnabled) {
-        ps.forEach(p => p.trail = []); // Clear relative trails as the reference has changed.
+        ps.forEach(p => p.trail = []);
     }
 
     trackedParticle = newParticle;
@@ -1812,7 +1821,6 @@ function setTrackedParticle(newParticle) {
         if (relativeTrailsEnabled) {
             relativeTrailsEnabled = false;
             $('relTrailBtn').classList.remove('active');
-            // Also clear trails here because the relative reference is gone.
             ps.forEach(p => p.trail = []);
         }
     }
@@ -1850,9 +1858,11 @@ $('trailsBtn').onclick = (e) => {
     trailsEnabled = !trailsEnabled;
     e.target.classList.toggle('active', trailsEnabled);
     if(trailsEnabled) {
-        clearAllVisualAids();
+        clearAllVisualAids(); // This should reset trails as it's a fresh start for the mode
         orbitPredictionEnabled = false; relativeTrailsEnabled = false;
         $('orbitBtn').classList.remove('active'); $('relTrailBtn').classList.remove('active');
+    } else {
+        ps.forEach(p => p.trail = []); // Clear trails when turning off
     }
 };
 $('relTrailBtn').onclick = (e) => {
@@ -1867,6 +1877,8 @@ $('relTrailBtn').onclick = (e) => {
         clearAllVisualAids();
         trailsEnabled = false; orbitPredictionEnabled = false;
         $('trailsBtn').classList.remove('active'); $('orbitBtn').classList.remove('active');
+    } else {
+         ps.forEach(p => p.trail = []); // Clear trails when turning off
     }
 };
 $('orbitBtn').onclick = (e) => {
@@ -2156,35 +2168,65 @@ $('saveCustomSystemBtn').onclick = () => {
 $('instantDownloadToggle').onchange = (e) => {
     instantDownload = e.target.checked;
 };
+function getUniqueSystemName(name) {
+    let finalName = name;
+    let counter = 1;
+    const existingNames = new Set(loadedSystems.map(s => s.name));
+    while (existingNames.has(finalName)) {
+        const baseName = name.toLowerCase().endsWith('.json') ? name.slice(0, -5) : name;
+        const extension = name.toLowerCase().endsWith('.json') ? '.json' : '';
+        finalName = `${baseName} (${counter})${extension}`;
+        counter++;
+    }
+    return finalName;
+}
 $('loadCustomSystemBtn').onclick = () => $('loadCustomSystemInput').click();
 $('loadCustomSystemInput').onchange = (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
     let filesProcessed = 0;
-    for (const file of files) {
+    files.forEach(file => {
         const reader = new FileReader();
-        reader.onload = (ev) => {
+        reader.onload = ev => {
             try {
+                if (!ev.target.result) throw new Error("File is empty.");
                 const data = JSON.parse(ev.target.result);
-                if (data.version === "1.0-custom" && Array.isArray(data.bodies)) {
-                    loadedSystems.push({ name: file.name, data: data });
+
+                const isValid = data.bodies && Array.isArray(data.bodies) && 
+                                data.bodies.length > 0 && data.bodies.length <= 100 &&
+                                data.bodies.every(b =>
+                                    typeof b.relX === 'number' && typeof b.relY === 'number' &&
+                                    typeof b.relVX === 'number' && typeof b.relVY === 'number' &&
+                                    typeof b.m === 'number'
+                                );
+
+                if (isValid) {
+                    const uniqueName = getUniqueSystemName(file.name);
+                    loadedSystems.push({ name: uniqueName, data: data });
                 } else {
-                    alert(`Invalid custom system file format in: ${file.name}`);
+                     if (data.bodies && data.bodies.length > 100) {
+                        alert(`File "${file.name}" exceeds the 100 body limit.`);
+                    } else {
+                        alert(`Invalid custom system file format in: "${file.name}"`);
+                    }
                 }
             } catch (error) {
-                alert(`Failed to parse JSON file: ${file.name}`);
+                alert(`Failed to process file "${file.name}": ${error.message}`);
             }
+
             filesProcessed++;
             if (filesProcessed === files.length) {
                 updateLoadedSystemsList();
             }
         };
-        reader.onerror = () => alert(`Error reading file: ${file.name}`);
+        reader.onerror = () => alert(`Error reading file: "${file.name}"`);
         reader.readAsText(file);
-    }
-    e.target.value = ''; // Reset input to allow loading same file(s) again
+    });
+
+    e.target.value = ''; // Reset input to allow loading same file again
 };
+
 function updateLoadedSystemsList() {
     const container = $('loaded-systems-list');
     container.innerHTML = '';
@@ -2204,10 +2246,11 @@ function updateLoadedSystemsList() {
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-name-btn edit-btn';
         editBtn.innerHTML = '✎';
-        editBtn.onclick = () => {
+        editBtn.onclick = (e) => {
+            e.stopPropagation();
             const newName = prompt("Enter new name for the system:", system.name);
             if (newName && newName.trim() !== '') {
-                loadedSystems[index].name = newName.trim();
+                loadedSystems[index].name = getUniqueSystemName(newName.trim());
                 updateLoadedSystemsList();
             }
         };
@@ -2215,7 +2258,8 @@ function updateLoadedSystemsList() {
         const saveBtn = document.createElement('button');
         saveBtn.className = 'save-system-btn';
         saveBtn.innerHTML = '💾';
-        saveBtn.onclick = () => {
+        saveBtn.onclick = (e) => {
+            e.stopPropagation();
             const jsonString = JSON.stringify(system.data, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -2988,3 +3032,4 @@ loop();
 <script type="module" src="/index.tsx"></script>
 </body>
 </html>
+--- END OF FILE index.html ---
