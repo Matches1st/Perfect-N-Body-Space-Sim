@@ -175,6 +175,10 @@
         box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
         border-left: none;
     }
+    .object-item.bary-selected {
+        background: rgba(128, 0, 128, 0.3);
+        box-shadow: 0 0 8px rgba(128, 0, 128, 0.5);
+    }
     .object-item .color-swatch {
         width: 24px;
         height: 24px;
@@ -186,7 +190,7 @@
     .object-item .info { flex-grow: 1; }
     .object-item .info div { line-height: 1.4; color: rgba(255, 255, 255, 0.8); }
     .object-item .info b { color: #fff; font-weight: 600; }
-    .delete-btn, .edit-btn, .toggle-vis-btn {
+    .delete-btn, .edit-btn, .toggle-vis-btn, .save-system-btn {
         width: 24px;
         height: 24px;
         border-radius: 50%;
@@ -203,17 +207,18 @@
     }
     .delete-btn { background: rgba(255, 85, 85, 0.8); }
     .edit-btn { background: rgba(0, 123, 255, 0.8); font-size: 16px; }
+    .save-system-btn { background: rgba(40, 167, 69, 0.8); font-size: 16px; }
     .toggle-vis-btn { background: rgba(100, 100, 100, 0.8); }
-    .delete-btn:hover, .edit-btn:hover, .toggle-vis-btn:hover {
+    .delete-btn:hover, .edit-btn:hover, .toggle-vis-btn:hover, .save-system-btn:hover {
         transform: scale(1.1);
         filter: brightness(1.2);
     }
 
     /* Custom Scrollbar for Object List */
-    #object-list::-webkit-scrollbar, #loaded-systems-container::-webkit-scrollbar { width: 6px; }
-    #object-list::-webkit-scrollbar-track, #loaded-systems-container::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 3px; }
-    #object-list::-webkit-scrollbar-thumb, #loaded-systems-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
-    #object-list::-webkit-scrollbar-thumb:hover, #loaded-systems-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+    #object-list::-webkit-scrollbar, #loaded-systems-container::-webkit-scrollbar, #help-content::-webkit-scrollbar { width: 6px; }
+    #object-list::-webkit-scrollbar-track, #loaded-systems-container::-webkit-scrollbar-track, #help-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 3px; }
+    #object-list::-webkit-scrollbar-thumb, #loaded-systems-container::-webkit-scrollbar-thumb, #help-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
+    #object-list::-webkit-scrollbar-thumb:hover, #loaded-systems-container::-webkit-scrollbar-thumb:hover, #help-content::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
 
 
     /* --- Utilities Toolbar --- */
@@ -282,7 +287,7 @@
     }
 
     /* --- Modal Panels (Edit, Save/Load, Presets, Custom Bodies) --- */
-    #edit-panel, #save-load-panel, #presets-panel, #custom-bodies-panel {
+    #edit-panel, #save-load-panel, #presets-panel, #custom-bodies-panel, #help-panel {
         position: absolute;
         background: linear-gradient(135deg, rgba(30, 34, 42, 0.95), rgba(50, 54, 62, 0.95));
         color: #fff;
@@ -296,7 +301,7 @@
     }
     #edit-panel { width: 240px; }
 
-    #edit-panel h4, #save-load-panel h4, #presets-panel h4, #custom-bodies-panel h4 {
+    #edit-panel h4, #save-load-panel h4, #presets-panel h4, #custom-bodies-panel h4, #help-panel h4 {
         margin-top: 0;
         padding-bottom: 15px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -343,18 +348,30 @@
     /* --- Save & Load / Presets / Custom Bodies Panel --- */
     #save-load-panel { width: 320px; height: 480px; flex-direction: column; }
     #presets-panel { width: 360px; height: 520px; flex-direction: column; }
-    #custom-bodies-panel { width: 320px; height: auto; max-height: 60vh; flex-direction: column; }
+    #custom-bodies-panel {
+        width: 320px;
+        min-height: 480px;
+        max-height: 80vh;
+        flex-direction: column;
+        resize: vertical;
+        overflow: auto;
+    }
     
-    #save-load-panel h4, #presets-panel h4, #custom-bodies-panel h4 { display: flex; justify-content: space-between; align-items: center; }
+    #save-load-panel h4, #presets-panel h4, #custom-bodies-panel h4, #help-panel h4 { display: flex; justify-content: space-between; align-items: center; }
     
-    #closeSaveLoadBtn, #closePresetsBtn, #closeCustomBodiesBtn {
+    #closeSaveLoadBtn, #closePresetsBtn, #closeCustomBodiesBtn, #closeHelpBtn {
         background: transparent; border: none; color: #fff; font-size: 24px; font-weight: 300; line-height: 1; padding: 0 5px; opacity: 0.7;
     }
-    #closeSaveLoadBtn:hover, #closePresetsBtn:hover, #closeCustomBodiesBtn:hover { opacity: 1; }
+    #closeSaveLoadBtn:hover, #closePresetsBtn:hover, #closeCustomBodiesBtn:hover, #closeHelpBtn:hover { opacity: 1; }
     
     .panel-section { padding: 20px 0; }
     #presets-panel .panel-section { padding: 10px 20px; flex-grow: 1; overflow-y: auto; }
-    #loaded-systems-container { flex-grow: 1; overflow-y: auto; padding: 10px 20px !important; }
+    #loaded-systems-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 10px 20px !important;
+        min-height: 200px;
+    }
 
     .panel-divider { border: none; border-top: 1px solid rgba(255, 255, 255, 0.15); margin: 0; }
     
@@ -377,9 +394,134 @@
     }
     #loaded-systems-list .loaded-system-item button { font-size: 14px; padding: 8px 12px; }
     #loaded-systems-list .loaded-system-item .system-name-btn { flex-grow: 1; margin-right: 8px; text-align: left; }
-    #loaded-systems-list .loaded-system-item .edit-name-btn {
+    #loaded-systems-list .loaded-system-item .edit-name-btn,
+    #loaded-systems-list .loaded-system-item .save-system-btn {
         width: 40px;
         flex-shrink: 0;
+    }
+
+    /* --- Toggle Switch for Custom Bodies Panel --- */
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 8px 0;
+    }
+    .toggle-label {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.9);
+        cursor: pointer;
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #4c5260;
+        transition: .3s;
+        border-radius: 26px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+    input:checked + .slider {
+        background-color: #007bff;
+    }
+    input:checked + .slider:before {
+        transform: translateX(22px);
+    }
+
+    /* --- Help Panel --- */
+    #help-btn {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(0, 123, 255, 0.8);
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 15;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    #help-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+    }
+    #help-panel {
+        width: 450px;
+        max-height: 70vh;
+        flex-direction: column;
+    }
+    #help-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    #help-tabs button {
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: rgba(60, 64, 72, 0.9);
+        color: #fff;
+    }
+    #help-tabs button.active {
+        background: rgba(0, 123, 255, 0.9);
+    }
+    #help-content {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 15px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.85);
+    }
+    #help-content h5 {
+        font-size: 16px;
+        color: #fff;
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+    #help-content ul {
+        padding-left: 20px;
+        margin: 0;
+    }
+    #help-content li {
+        margin-bottom: 8px;
+    }
+    #help-content kbd {
+        background: rgba(255,255,255,0.15);
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: monospace;
     }
 
     /* --- Tooltip --- */
@@ -488,7 +630,7 @@
     <label for="edit-name">Name</label>
     <input type="text" id="edit-name">
     <label for="edit-mass">Mass</label>
-    <input type="number" id="edit-mass" min="1">
+    <input type="number" id="edit-mass" min="0.1" step="0.1">
     <label for="edit-color">Color</label>
     <input type="color" id="edit-color">
     <button id="saveEditBtn">Save</button>
@@ -525,20 +667,39 @@
 
 <div id="custom-bodies-panel">
     <h4 id="custom-bodies-panel-header">Custom Celestial Bodies <button id="closeCustomBodiesBtn">&times;</button></h4>
-    <div class="panel-section">
-        <button id="saveCustomSystemBtn">Save New System</button>
-        <div class="file-input-wrapper" style="margin-top: 12px; margin-bottom: 0;">
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 0; flex-grow: 1;">
+        <button id="saveCustomSystemBtn" style="margin-bottom: 0;">Save New System</button>
+        <div class="file-input-wrapper" style="margin: 0;">
             <button id="loadCustomSystemBtn">Load From File</button>
-            <input type="file" id="loadCustomSystemInput" accept=".json" style="display: none;">
+            <input type="file" id="loadCustomSystemInput" accept=".json" multiple style="display: none;">
+        </div>
+
+        <div class="toggle-container">
+            <label class="toggle-switch">
+                <input type="checkbox" id="instantDownloadToggle" checked>
+                <span class="slider"></span>
+            </label>
+            <label for="instantDownloadToggle" class="toggle-label">Instantaneous Download</label>
+        </div>
+
+        <hr class="panel-divider" style="margin: 5px 0;">
+
+        <div id="loaded-systems-container" style="padding: 0 !important; display: flex; flex-direction: column; flex-grow: 1;">
+            <h5>Loaded Celestial Bodies</h5>
+            <div id="loaded-systems-list" style="flex-grow: 1; overflow-y: auto;">
+                <!-- Loaded systems will be dynamically inserted here -->
+            </div>
         </div>
     </div>
-    <hr class="panel-divider">
-    <div class="panel-section" id="loaded-systems-container">
-        <h5>Loaded Celestial Bodies</h5>
-        <div id="loaded-systems-list">
-            <!-- Loaded systems will be dynamically inserted here -->
-        </div>
-    </div>
+</div>
+
+
+<button id="help-btn">?</button>
+
+<div id="help-panel">
+    <h4 id="help-panel-header">Help Menu <button id="closeHelpBtn">&times;</button></h4>
+    <div id="help-tabs"></div>
+    <div id="help-content"></div>
 </div>
 
 
@@ -586,7 +747,8 @@ class P{
     }
 }
 let ps = [];
-function resetPs(){ ps=[]; nextId = 1; bodyNameCounter = 1; resetHistory(); }
+let satelliteCounters = {};
+function resetPs(){ ps=[]; nextId = 1; bodyNameCounter = 1; satelliteCounters = {}; resetHistory(); }
 function cloneParticle(p) {
     const clone = Object.assign(new P(0,0), JSON.parse(JSON.stringify(p)));
     return clone;
@@ -599,7 +761,8 @@ let trailsEnabled = false, orbitPredictionEnabled = false, relativeTrailsEnabled
 let selectedParticles = new Set();
 let selectionBox = {world: null, screen: null};
 let barycenterBoxDrawing = false;
-let addVelToolState = 'idle'; // 'idle', 'drawing', 'locked', 'applyingVelocity'
+let addVelSelectionLocked = false;
+let addVelIsApplying = false;
 let lockedBoxDragStart = {};
 let currentlyEditing = null;
 let predictedPaths = new Map();
@@ -614,6 +777,7 @@ let hologramSystem = null;
 let hologramActive = false;
 let loadedSystems = [];
 let customBodyCounter = 1;
+let instantDownload = true;
 
 /* ---------- Undo/Redo System ---------- */
 const MAX_HISTORY = 50;
@@ -1275,20 +1439,17 @@ function draw(){
     }
     
     if (addVelocityMode) {
-        if (addVelToolState === 'drawing' || addVelToolState === 'locked' || addVelToolState === 'applyingVelocity') {
-            const box = selectionBox.screen;
-            if (box) {
-                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-                ctx.fillRect(box.x, box.y, box.w, box.h);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([5, 5]);
-                ctx.strokeRect(box.x, box.y, box.w, box.h);
-                ctx.setLineDash([]);
-            }
+        if (selectionBox.screen) {
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+            ctx.fillRect(selectionBox.screen.x, selectionBox.screen.y, selectionBox.screen.w, selectionBox.screen.h);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(selectionBox.screen.x, selectionBox.screen.y, selectionBox.screen.w, selectionBox.screen.h);
+            ctx.setLineDash([]);
         }
         
-        if (addVelToolState === 'applyingVelocity') {
+        if (addVelIsApplying) {
             const box = selectionBox.screen;
             if (box) {
                 const boxCenterX = box.x + box.w / 2;
@@ -1366,10 +1527,10 @@ function loop(){
         spawnPreviewPath = predictSpawnPath(ghost, ps, trackedParticle);
     }
     
-    if (addVelocityMode && addVelToolState === 'locked') {
-        if (selectedParticles.size === 0) {
-            addVelToolState = 'idle';
-            selectionBox.screen = null;
+    if (addVelocityMode && addVelSelectionLocked && selectedParticles.size === 0) {
+        const currentParticles = Array.from(selectedParticles).filter(p => ps.includes(p));
+        if (currentParticles.length !== selectedParticles.size) {
+            selectedParticles = new Set(currentParticles);
         }
     }
 
@@ -1411,7 +1572,10 @@ function wire(){
             if(k==='timeSlider') TS=v;
             if(k==='spawnMassSlider') SPAWN_MASS=v;
             if(k==='throwSpeedMultSlider') THROW_MULT=v;
-            if(k==='pathLengthSlider') PATH_LENGTH_MULTIPLIER=v;
+            if(k==='pathLengthSlider') {
+                PATH_LENGTH_MULTIPLIER=v;
+                ps.forEach(p => p.trail = []); // Reset trails on path length change
+            }
         });
 
         s.val.addEventListener('click', () => {
@@ -1437,7 +1601,10 @@ function wire(){
                 if(sliderKey==='timeSlider') TS=newValue;
                 if(sliderKey==='spawnMassSlider') SPAWN_MASS=newValue;
                 if(sliderKey==='throwSpeedMultSlider') THROW_MULT=newValue;
-                if(sliderKey==='pathLengthSlider') PATH_LENGTH_MULTIPLIER=newValue;
+                if(sliderKey==='pathLengthSlider') {
+                    PATH_LENGTH_MULTIPLIER=newValue;
+                     ps.forEach(p => p.trail = []); // Also reset here
+                }
 
                 s.el.value = newValue;
                 span.textContent = (sliderKey === 'spawnMassSlider' || sliderKey === 'pathLengthSlider' ? newValue : newValue.toFixed(1)) + (s.suffix || '');
@@ -1499,15 +1666,19 @@ function updateObjectList() {
     let html = '';
     for (const p of ps) {
         const isTrackedClass = (trackedParticle && p.id === trackedParticle.id) ? 'tracked' : '';
+        const isBarySelected = (barycenterMode && selectedParticles.has(p)) ? 'bary-selected' : '';
+        const combinedClasses = `${isTrackedClass} ${isBarySelected}`.trim();
+
         if (p.isBarycenter) {
              const isHiddenClass = !p.visible ? 'hidden-vis' : '';
              html += `
-                <div class="object-item ${isTrackedClass}" data-id="${p.id}">
+                <div class="object-item ${combinedClasses}" data-id="${p.id}">
                     <div class="color-swatch" style="border: 2px dashed rgba(255,255,255,0.5); background: none; box-sizing: border-box;"></div>
                     <div class="info">
                         <div><b>${p.name || `Body #${p.id}`}</b></div>
                         <div>Total Mass: ${p.m.toFixed(1)}</div>
                         <div>Bodies: ${p.connectedIds.length}</div>
+                        <div>Vel: ${p.vx.toFixed(2)}, ${p.vy.toFixed(2)}</div>
                     </div>
                     <button class="toggle-vis-btn ${isHiddenClass}" data-id="${p.id}">👁️</button>
                     <button class="edit-btn" data-id="${p.id}">✎</button>
@@ -1518,7 +1689,7 @@ function updateObjectList() {
             const direction = (Math.atan2(p.vy, p.vx) * 180 / Math.PI).toFixed(1);
             const diameter = (p.r * 2).toFixed(2);
             html += `
-                <div class="object-item ${isTrackedClass}" data-id="${p.id}">
+                <div class="object-item ${combinedClasses}" data-id="${p.id}">
                     <div class="color-swatch" style="background-color: ${p.color()};"></div>
                     <div class="info">
                         <div><b>${p.name || `Body #${p.id}`}</b></div>
@@ -1541,7 +1712,19 @@ $('object-list').addEventListener('click', (e) => {
     if (isNaN(id)) return;
     const p_clicked = ps.find(p => p.id === id);
     if (!p_clicked) return;
+    
+    // Barycenter selection logic
+    if (barycenterMode && e.ctrlKey) {
+        if (p_clicked.isBarycenter) return; // Can't select barycenters
+        if (selectedParticles.has(p_clicked)) {
+            selectedParticles.delete(p_clicked);
+        } else {
+            selectedParticles.add(p_clicked);
+        }
+        return; // Prevent other actions
+    }
 
+    // Regular click actions
     if (e.target.classList.contains('delete-btn')) {
         recordHistory({ type: 'delete', particle: cloneParticle(p_clicked) });
         if (trackedParticle && trackedParticle.id === id) setTrackedParticle(null);
@@ -1568,7 +1751,12 @@ $('utilitiesButton').onclick = () => {
 function deactivateAllTools(except = null) {
     if (except !== 'tracker') { planetTrackerMode = false; $('trackerBtn').classList.remove('active'); }
     if (except !== 'editor') { planetEditorMode = false; $('editorBtn').classList.remove('active'); hideEditPanel(); }
-    if (except !== 'addVel') { addVelocityMode = false; $('addVelBtn').classList.remove('active'); addVelToolState = 'idle'; selectedParticles.clear(); }
+    if (except !== 'addVel') { 
+        addVelocityMode = false; $('addVelBtn').classList.remove('active'); 
+        addVelSelectionLocked = false; addVelIsApplying = false;
+        selectedParticles.clear();
+        selectionBox.screen = null;
+    }
     if (except !== 'anchor') { anchorMode = false; $('anchorBtn').classList.remove('active'); }
     if (except !== 'barycenter') { barycenterMode = false; $('barycenterBtn').classList.remove('active'); barycenterBoxDrawing = false; selectionBox = {world:null, screen:null}; selectedParticles.clear(); }
     if (except !== 'saveLoad') { hideSaveLoadPanel(); }
@@ -1601,7 +1789,13 @@ function clearAllVisualAids() {
 function setTrackedParticle(newParticle) {
     if (trackedParticle === newParticle) return; // No change, do nothing.
 
-    clearAllVisualAids();
+    // Selectively clear visual aids to preserve absolute trails on tracking changes.
+    predictedPaths.clear();
+    spawnPreviewPath = [];
+    if (relativeTrailsEnabled) {
+        ps.forEach(p => p.trail = []); // Clear relative trails as the reference has changed.
+    }
+
     trackedParticle = newParticle;
 
     if (newParticle) {
@@ -1610,7 +1804,7 @@ function setTrackedParticle(newParticle) {
             planetTrackerMode = true;
             $('trackerBtn').classList.add('active');
         }
-    } else { // newParticle is null
+    } else { // newParticle is null (untracking)
         if (planetTrackerMode) {
             planetTrackerMode = false;
             $('trackerBtn').classList.remove('active');
@@ -1618,6 +1812,8 @@ function setTrackedParticle(newParticle) {
         if (relativeTrailsEnabled) {
             relativeTrailsEnabled = false;
             $('relTrailBtn').classList.remove('active');
+            // Also clear trails here because the relative reference is gone.
+            ps.forEach(p => p.trail = []);
         }
     }
 }
@@ -1696,6 +1892,17 @@ $('barycenterBtn').onclick = (e) => {
 };
 
 /* ---------- Planet Editor Panel ---------- */
+function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
 function showEditPanel(p) {
     if (!p) return;
     currentlyEditing = p;
@@ -1704,7 +1911,18 @@ function showEditPanel(p) {
     $('edit-name').value = p.name || '';
     $('edit-mass').value = p.m;
     $('edit-mass').disabled = p.isBarycenter;
-    $('edit-color').value = p.customColor || '#ffffff';
+    
+    if (p.customColor) {
+        $('edit-color').value = p.customColor;
+    } else {
+        const match = p.color().match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+        if (match) {
+            const [h, s, l] = [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+            $('edit-color').value = hslToHex(h, s, l);
+        } else {
+            $('edit-color').value = '#ffffff'; // Fallback
+        }
+    }
     $('edit-color').disabled = p.isBarycenter;
     
     panel.style.display = 'block';
@@ -1722,7 +1940,7 @@ $('saveEditBtn').onclick = () => {
         
         p.name = $('edit-name').value || ("Body " + p.id);
         if (!p.isBarycenter) {
-            p.m = Math.max(1, parseFloat($('edit-mass').value));
+            p.m = Math.max(0.1, parseFloat($('edit-mass').value));
             p.r = Math.sqrt(p.m);
             p.customColor = $('edit-color').value;
         }
@@ -1769,6 +1987,7 @@ function loadSimulationData(data) {
         }
 
         bodyNameCounter = 1;
+        satelliteCounters = {};
 
         // Restore Sliders
         G = data.sliders.gravity; GM = data.sliders.gravityMult; TS = data.sliders.timeSpeed;
@@ -1934,25 +2153,37 @@ $('saveCustomSystemBtn').onclick = () => {
     selectionBox = { world: null, screen: { x: 0, y: 0, w: 0, h: 0 } };
     hideCustomBodiesPanel();
 };
+$('instantDownloadToggle').onchange = (e) => {
+    instantDownload = e.target.checked;
+};
 $('loadCustomSystemBtn').onclick = () => $('loadCustomSystemInput').click();
 $('loadCustomSystemInput').onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        try {
-            const data = JSON.parse(ev.target.result);
-            if (data.version === "1.0-custom" && Array.isArray(data.bodies)) {
-                loadedSystems.push({ name: file.name, data: data });
-                updateLoadedSystemsList();
-            } else {
-                alert("Invalid custom system file format.");
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    let filesProcessed = 0;
+    for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if (data.version === "1.0-custom" && Array.isArray(data.bodies)) {
+                    loadedSystems.push({ name: file.name, data: data });
+                } else {
+                    alert(`Invalid custom system file format in: ${file.name}`);
+                }
+            } catch (error) {
+                alert(`Failed to parse JSON file: ${file.name}`);
             }
-        } catch (error) { alert("Failed to parse JSON file."); }
-    };
-    reader.onerror = () => alert('Error reading file.');
-    reader.readAsText(file);
-    e.target.value = ''; // Reset input to allow loading same file again
+            filesProcessed++;
+            if (filesProcessed === files.length) {
+                updateLoadedSystemsList();
+            }
+        };
+        reader.onerror = () => alert(`Error reading file: ${file.name}`);
+        reader.readAsText(file);
+    }
+    e.target.value = ''; // Reset input to allow loading same file(s) again
 };
 function updateLoadedSystemsList() {
     const container = $('loaded-systems-list');
@@ -1980,9 +2211,28 @@ function updateLoadedSystemsList() {
                 updateLoadedSystemsList();
             }
         };
+        
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'save-system-btn';
+        saveBtn.innerHTML = '💾';
+        saveBtn.onclick = () => {
+            const jsonString = JSON.stringify(system.data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            let filename = system.name;
+            if (!filename.toLowerCase().endsWith('.json')) {
+                filename += '.json';
+            }
+            a.download = filename;
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
 
         itemDiv.appendChild(nameBtn);
         itemDiv.appendChild(editBtn);
+        itemDiv.appendChild(saveBtn);
         container.appendChild(itemDiv);
     });
 }
@@ -2001,6 +2251,7 @@ function makePanelDraggable(panel, header) {
 makePanelDraggable($('save-load-panel'), $('save-load-panel-header'));
 makePanelDraggable($('presets-panel'), $('presets-panel-header'));
 makePanelDraggable($('custom-bodies-panel'), $('custom-bodies-panel-header'));
+makePanelDraggable($('help-panel'), $('help-panel-header'));
 document.addEventListener('mousemove', e => {
     if (!isDraggingModal || !draggedPanel) return;
     let newX = e.clientX - panelOffsetX; let newY = e.clientY - panelOffsetY;
@@ -2011,7 +2262,16 @@ document.addEventListener('mousemove', e => {
 document.addEventListener('mouseup', () => { isDraggingModal = false; draggedPanel = null; });
 
 // Preset Data & Loading
-const PRESETS={"Solar System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Sun",x:0,y:0,vx:0,vy:0,m:1e6,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"Mercury",x:3900,y:0,vx:0,vy:716.11,m:.055,customColor:"#A9A9A9",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"Venus",x:7200,y:0,vx:0,vy:527.05,m:.815,customColor:"#F4A460",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"Earth",x:1e4,y:0,vx:0,vy:447.21,m:1,customColor:"#00BFFF",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"Luna",x:10026,y:0,vx:0,vy:455.98,m:.0123,customColor:"#C0C0C0",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"Mars",x:15200,y:0,vx:0,vy:362.74,m:.107,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:7,name:"Jupiter",x:52e3,y:0,vx:0,vy:196.12,m:317.8,customColor:"#DAA520",anchored:!1,isBarycenter:!1,visible:!0},{id:8,name:"Saturn",x:95400,y:0,vx:0,vy:144.79,m:95.2,customColor:"#F0E68C",anchored:!1,isBarycenter:!1,visible:!0},{id:9,name:"Uranus",x:191800,y:0,vx:0,vy:102.12,m:14.5,customColor:"#ADD8E6",anchored:!1,isBarycenter:!1,visible:!0},{id:10,name:"Neptune",x:300300,y:0,vx:0,vy:81.61,m:17.1,customColor:"#00008B",anchored:!1,isBarycenter:!1,visible:!0},{id:11,name:"Pluto",x:395e3,y:0,vx:0,vy:71.16,m:.0022,customColor:"#A52A2A",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},"Proxima Centauri System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Proxima Centauri",x:0,y:0,vx:0,vy:0,m:61e3,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"Proxima b",x:750,y:0,vx:0,vy:420,m:1.17,customColor:"#8B7355",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"Proxima c",x:3200,y:0,vx:0,vy:185,m:7,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"Proxima d",x:370,y:0,vx:0,vy:680,m:.26,customColor:"#DAA520",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},"TRAPPIST-1 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"TRAPPIST-1",x:0,y:0,vx:0,vy:0,m:4e4,customColor:"#8B0000",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:115,y:0,vx:0,vy:834.06,m:1.02,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:155,y:0,vx:0,vy:718.42,m:1.16,customColor:"#DC143C",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"d",x:215,y:0,vx:0,vy:609.99,m:.41,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"e",x:285,y:0,vx:0,vy:529.81,m:.77,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"f",x:375,y:0,vx:0,vy:461.88,m:1.04,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:7,name:"g",x:460,y:0,vx:0,vy:417.03,m:1.32,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0},{id:8,name:"h",x:610,y:0,vx:0,vy:362.14,m:.33,customColor:"#708090",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},"Kepler-186 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Kepler-186",x:0,y:0,vx:0,vy:0,m:22e4,customColor:"#FFA500",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:850,y:0,vx:0,vy:719.48,m:1.7,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:1150,y:0,vx:0,vy:618.55,m:2.1,customColor:"#DC143C",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"d",x:1550,y:0,vx:0,vy:532.8,m:2.4,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"e",x:2100,y:0,vx:0,vy:457.74,m:1.5,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"f",x:3100,y:0,vx:0,vy:376.74,m:1.4,customColor:"#228B22",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},"55 Cancri System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"55 Cancri",x:0,y:0,vx:0,vy:0,m:48e4,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:1800,y:0,vx:0,vy:730.3,m:260,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:3800,y:0,vx:0,vy:502.62,m:54,customColor:"#DAA520",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"f",x:7500,y:0,vx:0,vy:357.77,m:46,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"d",x:24e3,y:0,vx:0,vy:200,m:1200,customColor:"#8B0000",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"e",x:350,y:0,vx:0,vy:1656.16,m:8.6,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},"Kepler-11 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Kepler-11",x:0,y:0,vx:0,vy:0,m:475e3,customColor:"#FFFF00",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:1100,y:0,vx:0,vy:929.32,m:4.3,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:1500,y:0,vx:0,vy:795.82,m:13.5,customColor:"#DC143C",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"d",x:1950,y:0,vx:0,vy:697.98,m:6.1,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"e",x:2500,y:0,vx:0,vy:616.44,m:8.4,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"f",x:3300,y:0,vx:0,vy:536.54,m:2.3,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:7,name:"g",x:4800,y:0,vx:0,vy:444.88,m:300,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},"Kepler-47 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Kepler-47 A",x:-200,y:0,vx:0,vy:0,m:5e5,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"Kepler-47 B",x:200,y:0,vx:0,vy:0,m:1e5,customColor:"#FFA500",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"b",x:4500,y:0,vx:0,vy:516.4,m:2,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"c",x:12e3,y:0,vx:0,vy:316.23,m:23,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1}};
+const PRESETS={
+    "Solar System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Sun",x:0,y:0,vx:0,vy:0,m:1e6,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"Mercury",x:3900,y:0,vx:0,vy:716.11,m:.055,customColor:"#A9A9A9",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"Venus",x:7200,y:0,vx:0,vy:527.05,m:.815,customColor:"#F4A460",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"Earth",x:1e4,y:0,vx:0,vy:447.21,m:1,customColor:"#00BFFF",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"Luna",x:10026,y:0,vx:0,vy:455.98,m:.0123,customColor:"#C0C0C0",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"Mars",x:15200,y:0,vx:0,vy:362.74,m:.107,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:7,name:"Jupiter",x:52e3,y:0,vx:0,vy:196.12,m:317.8,customColor:"#DAA520",anchored:!1,isBarycenter:!1,visible:!0},{id:8,name:"Saturn",x:95400,y:0,vx:0,vy:144.79,m:95.2,customColor:"#F0E68C",anchored:!1,isBarycenter:!1,visible:!0},{id:9,name:"Uranus",x:191800,y:0,vx:0,vy:102.12,m:14.5,customColor:"#ADD8E6",anchored:!1,isBarycenter:!1,visible:!0},{id:10,name:"Neptune",x:300300,y:0,vx:0,vy:81.61,m:17.1,customColor:"#00008B",anchored:!1,isBarycenter:!1,visible:!0},{id:11,name:"Pluto",x:395e3,y:0,vx:0,vy:71.16,m:.0022,customColor:"#A52A2A",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},
+    "Proxima Centauri System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Proxima Centauri",x:0,y:0,vx:0,vy:0,m:61e3,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"Proxima b",x:750,y:0,vx:0,vy:420,m:1.17,customColor:"#8B7355",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"Proxima c",x:3200,y:0,vx:0,vy:185,m:7,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"Proxima d",x:370,y:0,vx:0,vy:680,m:.26,customColor:"#DAA520",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},
+    "TRAPPIST-1 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"TRAPPIST-1",x:0,y:0,vx:0,vy:0,m:4e4,customColor:"#8B0000",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:115,y:0,vx:0,vy:834.06,m:1.02,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:155,y:0,vx:0,vy:718.42,m:1.16,customColor:"#DC143C",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"d",x:215,y:0,vx:0,vy:609.99,m:.41,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"e",x:285,y:0,vx:0,vy:529.81,m:.77,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"f",x:375,y:0,vx:0,vy:461.88,m:1.04,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:7,name:"g",x:460,y:0,vx:0,vy:417.03,m:1.32,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0},{id:8,name:"h",x:610,y:0,vx:0,vy:362.14,m:.33,customColor:"#708090",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},
+    "Kepler-186 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Kepler-186",x:0,y:0,vx:0,vy:0,m:22e4,customColor:"#FFA500",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:850,y:0,vx:0,vy:719.48,m:1.7,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:1150,y:0,vx:0,vy:618.55,m:2.1,customColor:"#DC143C",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"d",x:1550,y:0,vx:0,vy:532.8,m:2.4,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"e",x:2100,y:0,vx:0,vy:457.74,m:1.5,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"f",x:3100,y:0,vx:0,vy:376.74,m:1.4,customColor:"#228B22",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},
+    "55 Cancri System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"55 Cancri",x:0,y:0,vx:0,vy:0,m:48e4,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:1800,y:0,vx:0,vy:730.3,m:260,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:3800,y:0,vx:0,vy:502.62,m:54,customColor:"#DAA520",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"f",x:7500,y:0,vx:0,vy:357.77,m:46,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"d",x:24e3,y:0,vx:0,vy:200,m:1200,customColor:"#8B0000",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"e",x:350,y:0,vx:0,vy:1656.16,m:8.6,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},
+    "Kepler-11 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Kepler-11",x:0,y:0,vx:0,vy:0,m:475e3,customColor:"#FFFF00",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"b",x:1100,y:0,vx:0,vy:929.32,m:4.3,customColor:"#B22222",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"c",x:1500,y:0,vx:0,vy:795.82,m:13.5,customColor:"#DC143C",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"d",x:1950,y:0,vx:0,vy:697.98,m:6.1,customColor:"#FF4500",anchored:!1,isBarycenter:!1,visible:!0},{id:5,name:"e",x:2500,y:0,vx:0,vy:616.44,m:8.4,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:6,name:"f",x:3300,y:0,vx:0,vy:536.54,m:2.3,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:7,name:"g",x:4800,y:0,vx:0,vy:444.88,m:300,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},
+    "Kepler-47 System":{version:"1.0",sliders:{gravity:200,gravityMult:10,timeSpeed:1,spawnMass:10,throwSpeedMult:10,pathLength:550},particles:[{id:1,name:"Kepler-47 A",x:-200,y:0,vx:0,vy:0,m:5e5,customColor:"#FFD700",anchored:!1,isBarycenter:!1,visible:!0},{id:2,name:"Kepler-47 B",x:200,y:0,vx:0,vy:0,m:1e5,customColor:"#FFA500",anchored:!1,isBarycenter:!1,visible:!0},{id:3,name:"b",x:4500,y:0,vx:0,vy:516.4,m:2,customColor:"#32CD32",anchored:!1,isBarycenter:!1,visible:!0},{id:4,name:"c",x:12e3,y:0,vx:0,vy:316.23,m:23,customColor:"#4682B4",anchored:!1,isBarycenter:!1,visible:!0}],settings:{trailsEnabled:!1,relativeTrailsEnabled:!0,orbitPredictionEnabled:!1,isPaused:!1},trackedParticleId:1},
+    "Ultimate Binary System By Matches1st": { "version": "1.0", "timestamp": 1761613463882, "sliders": { "gravity": 200, "gravityMult": 10, "timeSpeed": 150, "spawnMass": 1000, "throwSpeedMult": 10, "pathLength": 100000 }, "particles": [ { "id": 73, "name": "Barycenter 2", "x": 1601062.8061346738, "y": 1618609.2552037723, "vx": -1.7440627051574606, "vy": 33.12047603124708, "m": 2000000, "customColor": null, "anchored": false, "isBarycenter": true, "connectedIds": [59, 45], "visible": true }, { "id": 45, "name": "Body 2", "x": 1226109.7175041127, "y": 1361388.6641957923, "vx": 17.03239746188191, "vy": 5.811636875872982, "m": 1000000, "customColor": "#55f6f6", "anchored": false, "isBarycenter": false, "visible": true }, { "id": 59, "name": "Body 2", "x": 1976015.8947652353, "y": 1875829.846211753, "vx": -20.520522872196832, "vy": 60.429315186621174, "m": 1000000, "customColor": "#55f6f6", "anchored": false, "isBarycenter": false, "visible": true }, { "id": 47, "name": "Body 1", "x": 1175019.2230829333, "y": 1312033.8759324884, "vx": 124.9367226190446, "vy": -109.88508948225466, "m": 100, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 49, "name": "Body 1", "x": 1174593.8198138901, "y": 1311203.8497476142, "vx": 142.51706231502845, "vy": -119.91456995288598, "m": 100, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 61, "name": "Body 1", "x": 2047333.780741281, "y": 1863863.1261003143, "vx": 15.424096006059292, "vy": 231.05392623812565, "m": 100, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 63, "name": "Body 1", "x": 2046770.305146166, "y": 1864484.0807738097, "vx": -1.8123857215805304, "vy": 218.28738891672452, "m": 100, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 51, "name": "Body 1", "x": 1175165.0543851226, "y": 1311904.4201447559, "vx": 144.2208919116453, "vy": -79.29405313081425, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 53, "name": "Body 4", "x": 1175152.617393957, "y": 1311895.835129708, "vx": 149.59913933360176, "vy": -93.27525640736218, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 55, "name": "Body 1", "x": 1174801.3212089897, "y": 1311150.1548581903, "vx": 159.37635320419741, "vy": -80.01651094688395, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 57, "name": "Body 4", "x": 1174793.5461352754, "y": 1311152.3359835357, "vx": 146.80928597535578, "vy": -103.30106234471158, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 65, "name": "Body 1", "x": 2047490.8736392872, "y": 1863993.3283335227, "vx": -6.518025491491835, "vy": 264.78506956870245, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 67, "name": "Body 4", "x": 2047481.2479370085, "y": 1863983.713909154, "vx": 1.764384728282646, "vy": 249.3306273316761, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 69, "name": "Body 1", "x": 2046666.260343758, "y": 1864658.771816472, "vx": -36.289400209810495, "vy": 192.9644477682208, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true }, { "id": 71, "name": "Body 4", "x": 2046674.7698101308, "y": 1864652.5558054654, "vx": -22.67237731407172, "vy": 209.4842157642149, "m": 1, "customColor": null, "anchored": false, "isBarycenter": false, "visible": true } ], "settings": { "trailsEnabled": true, "relativeTrailsEnabled": false, "orbitPredictionEnabled": false, "isPaused": false }, "trackedParticleId": 73, "view": { "zoom": 0.0008006984980752686, "viewX": 1601062.8061346738, "viewY": 1618609.2552037723 } }
+};
 
 function populatePresetsPanel() {
     const container = $('presets-container');
@@ -2084,28 +2344,37 @@ canvas.addEventListener('mousedown', e => {
     if (planetEditorMode && clickedParticle) { showEditPanel(clickedParticle, e); return; }
 
     if (addVelocityMode) {
-        if (addVelToolState === 'locked') {
+        if (addVelSelectionLocked) {
             if (isPointInRect(e.clientX, e.clientY, selectionBox.screen)) {
-                addVelToolState = 'applyingVelocity';
+                addVelIsApplying = true;
                 lockedBoxDragStart = { x: e.clientX, y: e.clientY };
-                return;
             } else {
-                addVelToolState = 'idle'; selectedParticles.clear(); selectionBox.screen = null;
+                addVelSelectionLocked = false;
+                selectedParticles.clear();
+                selectionBox.screen = null;
             }
-        }
-        
-        if (clickedParticle) {
-            addVelTarget = clickedParticle; cx = e.clientX; cy = e.clientY;
         } else {
-            addVelToolState = 'drawing'; selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+            addVelTarget = null;
+            if (clickedParticle) {
+                addVelTarget = clickedParticle;
+            } else {
+                selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+            }
         }
         return;
     }
     if (anchorMode) {
         if (clickedParticle) {
-            const beforeState = { id: clickedParticle.id, anchored: clickedParticle.anchored };
+            const beforeState = { id: clickedParticle.id, anchored: clickedParticle.anchored, vx: clickedParticle.vx, vy: clickedParticle.vy };
+            
             clickedParticle.anchored = !clickedParticle.anchored;
-            const afterState = { id: clickedParticle.id, anchored: clickedParticle.anchored };
+            
+            if (clickedParticle.anchored) {
+                clickedParticle.vx = 0;
+                clickedParticle.vy = 0;
+            }
+
+            const afterState = { id: clickedParticle.id, anchored: clickedParticle.anchored, vx: clickedParticle.vx, vy: clickedParticle.vy };
             recordHistory({ type: 'anchor', before: beforeState, after: afterState });
         }
         return;
@@ -2113,7 +2382,8 @@ canvas.addEventListener('mousedown', e => {
     
     if (barycenterMode) {
         if (!clickedParticle) {
-            barycenterBoxDrawing = true; selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+            barycenterBoxDrawing = true;
+            selectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
         }
         return;
     }
@@ -2137,7 +2407,7 @@ canvas.addEventListener('mousemove', e => {
         lastX = e.clientX; lastY = e.clientY;
     } else {
         cx = e.clientX; cy = e.clientY;
-        if (addVelocityMode && addVelToolState === 'drawing') {
+        if (addVelocityMode && selectionBox.screen && !addVelSelectionLocked && !addVelTarget) {
             selectionBox.screen.w = e.clientX - selectionBox.screen.x;
             selectionBox.screen.h = e.clientY - selectionBox.screen.y;
         } else if (barycenterMode && barycenterBoxDrawing) {
@@ -2169,7 +2439,12 @@ canvas.addEventListener('mouseup', e => {
         let vy = v * Math.cos(angle) + trackedParticle.vy;
         
         const newParticle = new P(w.x, w.y, SPAWN_MASS, vx, vy);
-        newParticle.name = "Body " + bodyNameCounter++;
+        
+        const trackedName = trackedParticle.name || `Body #${trackedParticle.id}`;
+        if (!satelliteCounters[trackedName]) satelliteCounters[trackedName] = 0;
+        satelliteCounters[trackedName]++;
+        newParticle.name = `${trackedName}'s Satellite ${satelliteCounters[trackedName]}`;
+        
         ps.push(newParticle);
         recordHistory({ type: 'spawn', particle: cloneParticle(newParticle) });
         return;
@@ -2247,17 +2522,22 @@ canvas.addEventListener('mouseup', e => {
                 version: "1.0-custom",
                 bodies: snapshotBodies
             };
-            const jsonString = JSON.stringify(snapshot, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-            a.download = `custom_system_${timestamp}.json`;
-            a.href = url;
-            a.click();
-            URL.revokeObjectURL(url);
             
-            loadedSystems.push({ name: `Custom System ${customBodyCounter++}`, data: snapshot });
+            const systemName = `Custom System ${customBodyCounter++}`;
+            loadedSystems.push({ name: systemName, data: snapshot });
+
+            if (instantDownload) {
+                const jsonString = JSON.stringify(snapshot, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+                a.download = `custom_system_${timestamp}.json`;
+                a.href = url;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+            
             updateLoadedSystemsList();
         }
         
@@ -2299,31 +2579,7 @@ canvas.addEventListener('mouseup', e => {
             recordHistory({ type: 'addVelocity', before: beforeState, after: afterState });
             addVelTarget = null;
 
-        } else if (addVelToolState === 'drawing') {
-            const box = selectionBox.screen;
-            const r = { l: Math.min(box.x, box.x + box.w), r: Math.max(box.x, box.x + box.w),
-                        t: Math.min(box.y, box.y + box.h), b: Math.max(box.y, box.y + box.h) };
-            
-            selectionBox.screen = {x: r.l, y: r.t, w: r.r - r.l, h: r.b - r.t};
-
-            if (selectionBox.screen.w < 5 && selectionBox.screen.h < 5) {
-                addVelToolState = 'idle'; selectionBox.screen = null; return;
-            }
-
-            const w_tl = screenToWorld(r.l, r.t); const w_br = screenToWorld(r.r, r.b);
-            const world_box_selection = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
-            
-            selectedParticles.clear();
-            ps.forEach(p => {
-                if (!p.isBarycenter && isPointInWorldBox(p.x, p.y, world_box_selection)) {
-                    selectedParticles.add(p);
-                }
-            });
-
-            if (selectedParticles.size > 0) { addVelToolState = 'locked'; } 
-            else { addVelToolState = 'idle'; selectionBox.screen = null; }
-
-        } else if (addVelToolState === 'applyingVelocity') {
+        } else if (addVelIsApplying) {
             const screen_dx = e.clientX - lockedBoxDragStart.x;
             const screen_dy = e.clientY - lockedBoxDragStart.y;
             
@@ -2339,7 +2595,24 @@ canvas.addEventListener('mouseup', e => {
             if (beforeStates.length > 0) {
                 recordHistory({ type: 'batchEdit', before: beforeStates, after: afterStates });
             }
-            addVelToolState = 'locked';
+            addVelIsApplying = false;
+        } else if (selectionBox.screen && !addVelSelectionLocked) {
+            const box = selectionBox.screen;
+            const r = { l: Math.min(box.x, box.x + box.w), r: Math.max(box.x, box.x + box.w),
+                        t: Math.min(box.y, box.y + box.h), b: Math.max(box.y, box.y + box.h) };
+            
+            selectionBox.screen = {x: r.l, y: r.t, w: r.r - r.l, h: r.b - r.t};
+
+            const w_tl = screenToWorld(r.l, r.t); const w_br = screenToWorld(r.r, r.b);
+            const world_box_selection = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
+            
+            selectedParticles.clear();
+            ps.forEach(p => {
+                if (!p.isBarycenter && isPointInWorldBox(p.x, p.y, world_box_selection)) {
+                    selectedParticles.add(p);
+                }
+            });
+            addVelSelectionLocked = true;
         }
         return;
     }
@@ -2353,7 +2626,18 @@ canvas.addEventListener('mouseup', e => {
         if(trackedParticle) { vx += trackedParticle.vx; vy += trackedParticle.vy; }
         
         const newParticle = new P(w.x, w.y, SPAWN_MASS, vx, vy);
-        newParticle.name = "Body " + bodyNameCounter++;
+
+        let newName;
+        if (trackedParticle && (trackedParticle.name || trackedParticle.id)) {
+            const trackedName = trackedParticle.name || `Body #${trackedParticle.id}`;
+            if (!satelliteCounters[trackedName]) satelliteCounters[trackedName] = 0;
+            satelliteCounters[trackedName]++;
+            newName = `${trackedName}'s Satellite ${satelliteCounters[trackedName]}`;
+        } else {
+            newName = "Body " + bodyNameCounter++;
+        }
+        newParticle.name = newName;
+        
         ps.push(newParticle);
         recordHistory({ type: 'spawn', particle: cloneParticle(newParticle) });
     }
@@ -2388,7 +2672,18 @@ window.addEventListener('keydown', e => {
                 const barycenter = new P(comX / totalMass, comY / totalMass, totalMass, comVX / totalMass, comVY / totalMass);
                 barycenter.isBarycenter = true;
                 barycenter.connectedIds = ids;
-                barycenter.name = "Barycenter " + bodyNameCounter++;
+
+                const selectedNames = Array.from(selectedParticles).map(p => p.name || `Body #${p.id}`);
+                let baryName;
+                if (selectedNames.length === 2) {
+                    baryName = `${selectedNames[0]} and ${selectedNames[1]} Barycenter`;
+                } else if (selectedNames.length > 2) {
+                    baryName = `${selectedNames.slice(0, -1).join(', ')}, and ${selectedNames.slice(-1)} Barycenter`;
+                } else {
+                    baryName = "Barycenter " + bodyNameCounter++;
+                }
+                barycenter.name = baryName;
+                
                 ps.push(barycenter);
                 recordHistory({ type: 'spawn', particle: cloneParticle(barycenter) });
             }
@@ -2400,12 +2695,19 @@ window.addEventListener('keydown', e => {
         }
     }
     if (e.key === 'Escape') {
-        hideEditPanel(); hideSaveLoadPanel(); hidePresetsPanel(); hideCustomBodiesPanel();
-        deactivateAllTools();
+        if(addVelocityMode && addVelSelectionLocked) {
+             addVelSelectionLocked = false;
+             addVelIsApplying = false;
+             selectedParticles.clear();
+             selectionBox.screen = null;
+        } else {
+            hideEditPanel(); hideSaveLoadPanel(); hidePresetsPanel(); hideCustomBodiesPanel(); hideHelpPanel();
+            deactivateAllTools();
+        }
     }
 });
 
-canvas.addEventListener('mouseleave', () => { isPanning = false; dragging = false; addVelTarget = null; spawnPreviewPath = []; addVelToolState = 'idle'; });
+canvas.addEventListener('mouseleave', () => { isPanning = false; dragging = false; addVelTarget = null; spawnPreviewPath = []; addVelIsApplying = false; });
 canvas.addEventListener('wheel', e => {
     e.preventDefault();
     const worldBefore = screenToWorld(e.clientX, e.clientY);
@@ -2472,10 +2774,214 @@ function setupTooltips() {
     $('utilitiesToolbar').addEventListener('mouseleave', () => tooltip.classList.remove('show'));
 }
 
+/* ---------- Help Panel Logic ---------- */
+const helpPanel = $('help-panel');
+const helpTabsContainer = $('help-tabs');
+const helpContentContainer = $('help-content');
+
+const HELP_DATA = {
+    "General": {
+        "Content": "Welcome to the 2D N-Body Gravity Simulation! This tool lets you create and manipulate planetary systems with realistic gravity. Basic Controls: Left-click drag to spawn planets with slingshot velocity (release to launch). Right-click drag to pan the view. Scroll wheel to zoom (infinite zoom-out supported). <kbd>Spacebar</kbd> to pause/resume. <kbd>Escape</kbd> to close panels or deactivate tools. <kbd>Ctrl+Z</kbd> for undo, <kbd>Ctrl+Y</kbd> for redo. Click planets to interact with tools. All bodies attract each other via gravity (G=200, multiplier=10). Merging happens on collision.",
+        "Tips": [
+            "Start with low masses for stable systems.",
+            "Use zoom to fine-tune placements.",
+            "Track a planet for relative views.",
+            "Pause to edit without motion.",
+            "Use Presets for quick setups like the Solar System."
+        ]
+    },
+    "Planet Tracker": {
+        "How to Use": "Toggle on, click a planet in the simulation or object list to track (camera centers and follows it). Right-click or double-click empty space to untrack. Works with trails for relative motion.",
+        "Limitations": "Disabled for barycenters.",
+        "Tips": [
+            "Track a central star for system overview.",
+            "Use with Relative Trails for clean orbits.",
+            "Combine with pause to inspect fast systems.",
+            "Untracking resets to free pan.",
+            "Keyboard: No shortcut; use toolbar."
+        ]
+    },
+    "Add Velocity": {
+        "How to Use": "Toggle on. Click-drag from a planet to add velocity (green line previews). Or draw a box (click-drag empty space) to select multiple (green box); drag box to apply uniform velocity. Release to apply. Unselect box with empty click or tool toggle.",
+        "Limitations": "Disabled during other modes.",
+        "Tips": [
+            "Zoom out for higher velocities, zoom in for precision.",
+            "Box captures planets at release moment (no post-movement).",
+            "Use with pause for exact control.",
+            "Combine with Anchor for stable boosts.",
+            "Undo with <kbd>Ctrl+Z</kbd> if velocity is too strong."
+        ]
+    },
+    "Auto Orbit": {
+        "How to Use": "Track a planet first (button disabled otherwise). Toggle on to show white dashed circle centered on tracked planet (radius to mouse). Click to spawn at mouse position with calculated orbital velocity (counterclockwise, accounts for masses). Works with Custom Celestial Bodies hologram for orbiting systems.",
+        "Limitations": "Disabled for barycenters or no tracking.",
+        "Tips": [
+            "Closer mouse = faster orbit; farther = slower.",
+            "For massive bodies, uses reduced mass formula.",
+            "Use with slingshot for elliptical tweaks.",
+            "Pause to place precisely.",
+            "<kbd>Escape</kbd> to deactivate."
+        ]
+    },
+    "Anchor": {
+        "How to Use": "Toggle on, click a planet to anchor/unanchor (neon blue outline). Anchored planets don't move but attract others.",
+        "Limitations": "No velocity/acceleration.",
+        "Tips": [
+            "Anchor stars for stable systems.",
+            "Use with Add Velocity to simulate engines.",
+            "Anchored planets merge on collision.",
+            "Combine with Barycenter for group centers.",
+            "<kbd>Escape</kbd> to deactivate."
+        ]
+    },
+    "Planet Trails": {
+        "How to Use": "Toggle on for absolute trails. Mutually exclusive with Relative Trails/Orbits. Resets on toggle.",
+        "Limitations": "Clears on switch.",
+        "Tips": [
+            "Adjust Path Length slider for longer trails.",
+            "Use for speed visualization.",
+            "Slower planets have longer trails.",
+            "Zoom out for system-wide views.",
+            "Toggle off for performance."
+        ]
+    },
+    "Rel. Trail": {
+        "How to Use": "Track a planet, toggle on. Mutually exclusive with Planet Trails/Orbits. Resets on toggle.",
+        "Limitations": "Requires tracking.",
+        "Tips": [
+            "Great for orbiting systems.",
+            "Adjust Path Length for detail.",
+            "Use with Auto Orbit for previews.",
+            "No trails for tracked planet.",
+            "Toggle off for absolute views."
+        ]
+    },
+    "Displayed Orbit": {
+        "How to Use": "Toggle on for forward orbit lines. Mutually exclusive with trails. Resets on toggle.",
+        "Limitations": "Computation-heavy at high Path Length.",
+        "Tips": [
+            "Increase Path Length for longer predictions.",
+            "Use with pause for analysis.",
+            "Relative when tracking.",
+            "Accounts for all gravity.",
+            "Toggle for performance."
+        ]
+    },
+    "Planet Editor": {
+        "How to Use": "Toggle on, click a planet to open menu. Change name, mass (min 0.1), color; save applies.",
+        "Limitations": "No mass 0; color persists.",
+        "Tips": [
+            "Edit mass to adjust gravity/orbits.",
+            "Use pause for editing.",
+            "Colors affect trails.",
+            "Drag menu for visibility.",
+            "<kbd>Escape</kbd> to close."
+        ]
+    },
+    "Barycenter": {
+        "How to Use": "Toggle on. Draw box or <kbd>Ctrl</kbd>+click planets (purple outlines). Press <kbd>Enter</kbd> to create (if ≥2 selected). Clears on empty click/toggle.",
+        "Limitations": "Barycenters have no gravity.",
+        "Tips": [
+            "Use <kbd>Ctrl</kbd>+click in object list for precision.",
+            "Name auto-generates (e.g., 'Earth and Mars Barycenter').",
+            "Track barycenters for group orbits.",
+            "Deletes if <2 connected planets.",
+            "<kbd>Escape</kbd> to clear selection."
+        ]
+    },
+    "Save & Load": {
+        "How to Use": "Toggle on to open menu. Save: Downloads current state. Load: Choose file, restores state.",
+        "Limitations": "No auto-save.",
+        "Tips": [
+            "Use for backups.",
+            "Load resets current sim.",
+            "Includes sliders, particles, settings.",
+            "Validate files before loading.",
+            "<kbd>Escape</kbd> to close."
+        ]
+    },
+    "Presets": {
+        "How to Use": "Toggle on to open menu. Click a system to load (clears current).",
+        "Limitations": "Overwrites sim.",
+        "Tips": [
+            "Use for quick starts (e.g., Solar System).",
+            "Track central star post-load.",
+            "Combine with Save & Load for modifications.",
+            "Relative trails for orbits.",
+            "<kbd>Escape</kbd> to close."
+        ]
+    },
+    "Custom Bodies": {
+        "How to Use": "Toggle on, open menu. Save: Close menu, draw red box (snapshot relative to tracked), auto-downloads JSON (toggle 'Instantaneous Download'). Load: Choose file(s), adds to list. Click list button: Hologram (50% opacity) follows cursor. Left-click to spawn; persists for multiple (stamp). <kbd>Enter</kbd> to dismiss hologram/reopen menu; <kbd>Escape</kbd> to cancel.",
+        "Limitations": "Requires tracking; box snapshot at release.",
+        "Tips": [
+            "Track central for stationary saves.",
+            "Use with Auto Orbit for orbiting systems.",
+            "Slingshot hologram for velocity.",
+            "Edit names via pencil icon.",
+            "Save icon downloads from list."
+        ]
+    }
+};
+
+function setupHelpPanel() {
+    let firstTab = true;
+    for (const tabName in HELP_DATA) {
+        const tabButton = document.createElement('button');
+        tabButton.textContent = tabName;
+        tabButton.dataset.tab = tabName;
+        if (firstTab) {
+            tabButton.classList.add('active');
+            firstTab = false;
+        }
+        tabButton.onclick = () => {
+            document.querySelectorAll('#help-tabs button').forEach(btn => btn.classList.remove('active'));
+            tabButton.classList.add('active');
+            renderHelpContent(tabName);
+        };
+        helpTabsContainer.appendChild(tabButton);
+    }
+    renderHelpContent(Object.keys(HELP_DATA)[0]);
+}
+
+function renderHelpContent(tabName) {
+    const content = HELP_DATA[tabName];
+    let html = '';
+    for (const sectionTitle in content) {
+        html += `<h5>${sectionTitle}</h5>`;
+        const sectionContent = content[sectionTitle];
+        if (Array.isArray(sectionContent)) {
+            html += '<ul>';
+            sectionContent.forEach(tip => html += `<li>${tip}</li>`);
+            html += '</ul>';
+        } else {
+            html += `<p>${sectionContent}</p>`;
+        }
+    }
+    helpContentContainer.innerHTML = html;
+}
+
+function showHelpPanel() {
+    helpPanel.style.display = 'flex';
+    helpPanel.style.left = `${(window.innerWidth - helpPanel.offsetWidth) / 2}px`;
+    helpPanel.style.top = `${(window.innerHeight - helpPanel.offsetHeight) / 2}px`;
+}
+function hideHelpPanel() {
+    helpPanel.style.display = 'none';
+}
+
+$('help-btn').onclick = showHelpPanel;
+$('closeHelpBtn').onclick = hideHelpPanel;
+helpPanel.addEventListener('click', (e) => {
+    if (e.target === helpPanel) hideHelpPanel();
+});
+
 
 /* ---------- start ---------- */
 populatePresetsPanel();
 setupTooltips();
+setupHelpPanel();
+$('instantDownloadToggle').checked = instantDownload;
 resetPs();
 loop();
 </script>
