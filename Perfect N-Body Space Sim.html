@@ -179,6 +179,10 @@
         background: rgba(128, 0, 128, 0.3);
         box-shadow: 0 0 8px rgba(128, 0, 128, 0.5);
     }
+    .object-item.delete-selected {
+        background: rgba(255, 0, 0, 0.3);
+        box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+    }
     .object-item .color-swatch {
         width: 24px;
         height: 24px;
@@ -617,6 +621,7 @@
         <button id="relTrailBtn" class="tool-btn">Rel. Trail</button>
         <button id="orbitBtn" class="tool-btn">Displayed Orbit</button>
         <button id="editorBtn" class="tool-btn">Planet Editor</button>
+        <button id="deleteBtn" class="tool-btn">🗑️ Delete</button>
         <button id="barycenterBtn" class="tool-btn">Barycenter</button>
         <button id="saveLoadBtn" class="tool-btn">Save & Load</button>
         <button id="presetsBtn" class="tool-btn">Presets</button>
@@ -756,10 +761,12 @@ function cloneParticle(p) {
 
 /* ---------- state variables ---------- */
 let trackedParticle = null;
-let planetTrackerMode = false, planetEditorMode = false, addVelocityMode = false, anchorMode = false, barycenterMode = false, autoOrbitMode = false, customBodiesMode = false;
+let planetTrackerMode = false, planetEditorMode = false, addVelocityMode = false, anchorMode = false, barycenterMode = false, autoOrbitMode = false, customBodiesMode = false, deleteMode = false;
 let trailsEnabled = false, orbitPredictionEnabled = false, relativeTrailsEnabled = false;
 let selectedParticles = new Set();
+const selectedForDelete = new Set();
 let selectionBox = {world: null, screen: null};
+let deleteSelectionBox = { active: false, screen: null };
 let barycenterBoxDrawing = false;
 let addVelSelectionLocked = false;
 let addVelIsApplying = false;
@@ -1389,6 +1396,20 @@ function draw(){
     }
     ctx.restore();
 
+    // Draw selection outlines before particles
+    if (deleteMode && selectedForDelete.size > 0) {
+        ctx.save();
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 3 / zoom;
+        for (const p of selectedForDelete) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r + 2 / zoom, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+
     for(const p of ps){
         if(isNaN(p.x)||isNaN(p.y)) continue;
         
@@ -1491,6 +1512,15 @@ function draw(){
             ctx.strokeRect(box.x, box.y, box.w, box.h);
             ctx.setLineDash([]);
         }
+    }
+
+    if (deleteMode && deleteSelectionBox.active && deleteSelectionBox.screen) {
+        const box = deleteSelectionBox.screen;
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+        ctx.fillRect(box.x, box.y, box.w, box.h);
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(box.x, box.y, box.w, box.h);
     }
 
     if (saveInProgress) {
@@ -1668,13 +1698,15 @@ $('pauseButton').onclick=(e)=>{
 function updateObjectList() {
     const listDiv = $('object-list');
     if (!listDiv) return;
+    const scrollPos = listDiv.scrollTop; // Store scroll position
     ps.sort((a, b) => b.m - a.m);
 
     let html = '';
     for (const p of ps) {
         const isTrackedClass = (trackedParticle && p.id === trackedParticle.id) ? 'tracked' : '';
         const isBarySelected = (barycenterMode && selectedParticles.has(p)) ? 'bary-selected' : '';
-        const combinedClasses = `${isTrackedClass} ${isBarySelected}`.trim();
+        const isDeleteSelected = (deleteMode && selectedForDelete.has(p)) ? 'delete-selected' : '';
+        const combinedClasses = `${isTrackedClass} ${isBarySelected} ${isDeleteSelected}`.trim();
 
         if (p.isBarycenter) {
              const isHiddenClass = !p.visible ? 'hidden-vis' : '';
@@ -1710,6 +1742,7 @@ function updateObjectList() {
         }
     }
     listDiv.innerHTML = html;
+    listDiv.scrollTop = scrollPos; // Restore scroll position
 }
 $('object-list').addEventListener('click', (e) => {
     const item = e.target.closest('.object-item');
@@ -1720,6 +1753,17 @@ $('object-list').addEventListener('click', (e) => {
     const p_clicked = ps.find(p => p.id === id);
     if (!p_clicked) return;
     
+    // Delete mode selection logic
+    if (deleteMode && e.ctrlKey) {
+        if (p_clicked.isBarycenter) return;
+        if (selectedForDelete.has(p_clicked)) {
+            selectedForDelete.delete(p_clicked);
+        } else {
+            selectedForDelete.add(p_clicked);
+        }
+        return;
+    }
+
     // Barycenter selection logic
     if (barycenterMode && e.ctrlKey) {
         if (p_clicked.isBarycenter) return; // Can't select barycenters
@@ -1766,6 +1810,10 @@ function deactivateAllTools(except = null) {
     }
     if (except !== 'anchor') { anchorMode = false; $('anchorBtn').classList.remove('active'); }
     if (except !== 'barycenter') { barycenterMode = false; $('barycenterBtn').classList.remove('active'); barycenterBoxDrawing = false; selectionBox = {world:null, screen:null}; selectedParticles.clear(); }
+    if (except !== 'delete') { 
+        deleteMode = false; $('deleteBtn').classList.remove('active');
+        selectedForDelete.clear(); deleteSelectionBox.active = false;
+    }
     if (except !== 'saveLoad') { hideSaveLoadPanel(); }
     if (except !== 'presets') { hidePresetsPanel(); }
     
@@ -1896,6 +1944,15 @@ $('editorBtn').onclick = (e) => {
     planetEditorMode = !planetEditorMode;
     if(planetEditorMode){ deactivateAllTools('editor'); e.target.classList.add('active'); } 
     else { e.target.classList.remove('active'); hideEditPanel(); }
+};
+$('deleteBtn').onclick = (e) => {
+    deleteMode = !deleteMode;
+    if (deleteMode) { 
+        deactivateAllTools('delete'); 
+        e.target.classList.add('active'); 
+    } else {
+        e.target.classList.remove('active');
+    }
 };
 $('barycenterBtn').onclick = (e) => {
     barycenterMode = !barycenterMode;
@@ -2371,6 +2428,22 @@ canvas.addEventListener('mousedown', e => {
         return;
     }
 
+    if (deleteMode) {
+        if (e.ctrlKey) {
+            if (clickedParticle && !clickedParticle.isBarycenter) {
+                if (selectedForDelete.has(clickedParticle)) {
+                    selectedForDelete.delete(clickedParticle);
+                } else {
+                    selectedForDelete.add(clickedParticle);
+                }
+            }
+        } else {
+            deleteSelectionBox.active = true;
+            deleteSelectionBox.screen = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+        }
+        return;
+    }
+
     if (barycenterMode && e.ctrlKey) {
         if (clickedParticle && !clickedParticle.isBarycenter) {
             if (selectedParticles.has(clickedParticle)) {
@@ -2457,6 +2530,9 @@ canvas.addEventListener('mousemove', e => {
         } else if (barycenterMode && barycenterBoxDrawing) {
             selectionBox.screen.w = e.clientX - selectionBox.screen.x;
             selectionBox.screen.h = e.clientY - selectionBox.screen.y;
+        } else if (deleteMode && deleteSelectionBox.active) {
+            deleteSelectionBox.screen.w = e.clientX - deleteSelectionBox.screen.x;
+            deleteSelectionBox.screen.h = e.clientY - deleteSelectionBox.screen.y;
         } else if (saveInProgress) {
             selectionBox.screen.w = e.clientX - sx;
             selectionBox.screen.h = e.clientY - sy;
@@ -2591,6 +2667,26 @@ canvas.addEventListener('mouseup', e => {
         return;
     }
 
+    if (deleteMode && deleteSelectionBox.active) {
+        const box = deleteSelectionBox.screen;
+        const r = { l: Math.min(box.x, box.x + box.w), r: Math.max(box.x, box.x + box.w),
+                    t: Math.min(box.y, box.y + box.h), b: Math.max(box.y, box.y + box.h) };
+        
+        const w_tl = screenToWorld(r.l, r.t);
+        const w_br = screenToWorld(r.r, r.b);
+        const world_box_selection = {x: w_tl.x, y: w_tl.y, w: w_br.x - w_tl.x, h: w_br.y - w_tl.y };
+
+        ps.forEach(p => {
+            if (!p.isBarycenter && isPointInWorldBox(p.x, p.y, world_box_selection)) {
+                selectedForDelete.add(p);
+            }
+        });
+
+        deleteSelectionBox.active = false;
+        deleteSelectionBox.screen = null;
+        return;
+    }
+
     if (barycenterMode) {
         if (barycenterBoxDrawing) {
             barycenterBoxDrawing = false;
@@ -2701,7 +2797,19 @@ window.addEventListener('keydown', e => {
     }
     if (e.key === 'Enter') {
         e.preventDefault();
-        if (barycenterMode) {
+        if (deleteMode && selectedForDelete.size > 0) {
+            const particlesToDelete = Array.from(selectedForDelete);
+            recordHistory({ type: 'batchDelete', particles: particlesToDelete.map(cloneParticle) });
+
+            const idsToDelete = new Set(particlesToDelete.map(p => p.id));
+            ps = ps.filter(p => !idsToDelete.has(p.id));
+
+            if (trackedParticle && idsToDelete.has(trackedParticle.id)) {
+                setTrackedParticle(null);
+            }
+            
+            selectedForDelete.clear();
+        } else if (barycenterMode) {
             if (selectedParticles.size >= 2) {
                 let totalMass = 0, comX = 0, comY = 0, comVX = 0, comVY = 0;
                 const ids = [];
@@ -2739,7 +2847,10 @@ window.addEventListener('keydown', e => {
         }
     }
     if (e.key === 'Escape') {
-        if(addVelocityMode && addVelSelectionLocked) {
+        if (deleteMode) {
+            selectedForDelete.clear();
+            deleteSelectionBox.active = false;
+        } else if(addVelocityMode && addVelSelectionLocked) {
              addVelSelectionLocked = false;
              addVelIsApplying = false;
              selectedParticles.clear();
@@ -2776,6 +2887,7 @@ function setupTooltips() {
         relTrailBtn: "Show trails relative to the tracked planet. Requires tracking a planet.",
         orbitBtn: "Predict and display the future orbital paths of all planets.",
         editorBtn: "Click a planet to edit its mass, name, and color.",
+        deleteBtn: "Select planets (Ctrl+Click or box) and press Enter to delete them. Escape to clear selection.",
         barycenterBtn: "Select multiple planets (Ctrl+Click or box) and press Enter to create their center of mass.",
         saveLoadBtn: "Save your simulation to a file or load a previous save.",
         presetsBtn: "Load pre-made solar systems and exoplanet configurations.",
@@ -2922,6 +3034,15 @@ const HELP_DATA = {
             "<kbd>Escape</kbd> to close."
         ]
     },
+    "Delete": {
+        "How to Use": "Toggle on. <kbd>Ctrl</kbd>+click planets to select/deselect them (red outline). Alternatively, click and drag a box in empty space to select multiple planets. Press <kbd>Enter</kbd> to delete all selected planets. Press <kbd>Escape</kbd> to clear your selection.",
+        "Tips": [
+            "You can select planets from the object list via <kbd>Ctrl</kbd>+click when the tool is active.",
+            "Deleted planets can be restored using Undo (<kbd>Ctrl</kbd>+Z).",
+            "Deleting a tracked planet will untrack it.",
+            "Use with pause for precise selection in dense systems."
+        ]
+    },
     "Barycenter": {
         "How to Use": "Toggle on. Draw box or <kbd>Ctrl</kbd>+click planets (purple outlines). Press <kbd>Enter</kbd> to create (if ≥2 selected). Clears on empty click/toggle.",
         "Limitations": "Barycenters have no gravity.",
@@ -3032,4 +3153,3 @@ loop();
 <script type="module" src="/index.tsx"></script>
 </body>
 </html>
---- END OF FILE index.html ---
